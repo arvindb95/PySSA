@@ -3,4 +3,4 @@ Python implementation of the Sychrotron Self Absorbed (SSA) model from
 [Soderberg et al. 2005](https://ui.adsabs.harvard.edu/abs/2005ApJ...621..908S/abstract) 
 
 ## To do
-- Check the calculations of F2 and F3
+- Better comments to make the code more readable

@@ -32,7 +32,7 @@ def calc_F(x):
     
 def calc_F_2(x,calc_F,p):
     if isinstance(x,float):
-        fy = lambda y: calc_F(y) * (y**(p-2.0)/2.0)
+        fy = lambda y: calc_F(y) * (y**((p-2.0)/2.0))
         return np.sqrt(3) * integrate.quad(fy,0,x)[0]
     else:    
         F_2_x = []
@@ -41,13 +41,13 @@ def calc_F_2(x,calc_F,p):
             counter += 1
             print("------------------------------------------------------")
             print("calculating F2 for iteration number : ",counter," out of 80")
-            fy = lambda y: calc_F(y) * (y**(p-2.0)/2.0)
+            fy = lambda y: calc_F(y) * (y**((p-2.0)/2.0))
             F_2_x.append(np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
         return np.array(F_2_x)
 
 def calc_F_3(x,calc_F,p):
     if isinstance(x,float):
-        fy = lambda y: calc_F(y) * (y**(p-3.0)/2.0)
+        fy = lambda y: calc_F(y) * (y**((p-3.0)/2.0))
         return np.sqrt(3) * integrate.quad(fy,0,x)[0]
     else:
         F_3_x = []
@@ -56,7 +56,7 @@ def calc_F_3(x,calc_F,p):
             counter += 1
             print("------------------------------------------------------")
             print("calculating F3 for iteration number : ",counter," out of 80")
-            fy = lambda y: calc_F(y) * (y**(p-3.0)/2.0)
+            fy = lambda y: calc_F(y) * (y**((p-3.0)/2.0))
             F_3_x.append(np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
         return np.array(F_3_x)
 
