@@ -12,40 +12,27 @@ import matplotlib.pyplot as plt
 
 ## Functions ##
 
-# Modified Bessel Function of second kind  
-
-def calc_K_n(x,n):
-    """
-    Modified Bessel Function formulae from Wolfram (see https://mathworld.wolfram.com/ModifiedBesselFunctionoftheSecondKind.html)
-
-    Returns value of K_n of the order of n at values of x
-    """
-    fy = lambda y: np.exp(-x*y) * (((y**2.0) - 1.0)**(n-0.5)) 
-    K_n = (np.sqrt(np.pi)/special.factorial(n - 0.5)) * ((0.5*x)**n) * integrate.quad(fy,1.0,np.inf)[0]
-    #K_n_error = (np.sqrt(np.pi)/special.factorial(n - 0.5)) * ((0.5*)**n) * integrate.quad(fy,1.0,np.inf)[1]
-    return K_n
-
 #--------------------------------------------------------------
 
 # Define functions F, F_2 and F_3
 
-def calc_F(x,calc_K_n):
+def calc_F(x):
     """
     Returns value of function F defined in equation A7 of Soderberg et al. 2005
     """
     if isinstance(x,float):
-        fy = lambda y: calc_K_n(y,5.0/3.0)
+        fy = lambda y: special.kv(5.0/3.0,y)
         return (x * integrate.quad(fy,x,np.inf)[0])
     else:
         F_x = []
         for x_i in x:
-            fy = lambda y: calc_K_n(y,5.0/3.0)
+            fy = lambda y: special.kv(5.0/3.0,y)
             F_x.append(x_i * integrate.quad(fy,x_i,np.inf)[0])
         return np.array(F_x)
     
-def calc_F_2(x,calc_F,calc_K_n,p):
+def calc_F_2(x,calc_F,p):
     if isinstance(x,float):
-        fy = lambda y: calc_F(y,calc_K_n) * (y**(p-2.0)/2.0)
+        fy = lambda y: calc_F(y) * (y**(p-2.0)/2.0)
         return np.sqrt(3) * integrate.quad(fy,0,x)[0]
     else:    
         F_2_x = []
@@ -54,14 +41,13 @@ def calc_F_2(x,calc_F,calc_K_n,p):
             counter += 1
             print("------------------------------------------------------")
             print("calculating F2 for iteration number : ",counter," out of 80")
-            fy = lambda y: calc_F(y,calc_K_n) * (y**(p-2.0)/2.0)
-            print(fy)
+            fy = lambda y: calc_F(y) * (y**(p-2.0)/2.0)
             F_2_x.append(np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
         return np.array(F_2_x)
 
-def calc_F_3(x,calc_F,calc_K_n,p):
+def calc_F_3(x,calc_F,p):
     if isinstance(x,float):
-        fy = lambda y: calc_F(y,calc_K_n) * (y**(p-3.0)/2.0)
+        fy = lambda y: calc_F(y) * (y**(p-3.0)/2.0)
         return np.sqrt(3) * integrate.quad(fy,0,x)[0]
     else:
         F_3_x = []
@@ -70,7 +56,7 @@ def calc_F_3(x,calc_F,calc_K_n,p):
             counter += 1
             print("------------------------------------------------------")
             print("calculating F3 for iteration number : ",counter," out of 80")
-            fy = lambda y: calc_F(y,calc_K_n) * (y**(p-3.0)/2.0)
+            fy = lambda y: calc_F(y) * (y**(p-3.0)/2.0)
             F_3_x.append(np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
         return np.array(F_3_x)
 
@@ -109,7 +95,7 @@ def calc_nu_m(t,nu_m_0,t_0,alpha_gamma,alpha_B):
 # Caluclate the optical depth tau_nu at a given time 
 
 def calc_tau_nu(t,t_0,C_tau,alpha_r,alpha_gamma,alpha_B,alpha_scrpitF,p,nu,F2):    
-    return (C_tau*((t/t_0)**((p-2.0)*alpha_gamma + (3.0+p/2.0)*alpha_B + alpha_r + alpha_scrpitF)) * (nu**((-p+4.0)/2.0)) * F2).value
+    return (C_tau*((t/t_0)**((p-2.0)*alpha_gamma + (3.0+p/2.0)*alpha_B + alpha_r + alpha_scrpitF)) * (nu**(-(p+4.0)/2.0)) * F2).value
 
 #--------------------------------------------------------------
 
@@ -119,6 +105,9 @@ def calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3):
     eq1 = C_f*((t/t_0)**((4.0*alpha_r-alpha_B)/2.0))
     eq2 = ((1.0 - np.exp(-tau_nu**(zeta)))**(1.0/zeta)) * (nu**(5.0/2.0)) * F3/F2
     return ((eq1 * eq2).value * (u.erg / u.s /(u.cm)**2.0 /u.Hz)).to(u.mJy)
+
+#--------------------------------------------------------------
+#--------------------------------------------------------------
 
 ## Test Calculations ##
 
@@ -151,11 +140,12 @@ m_e = const.m_e.cgs               # g
 e = const.e.esu                   # esu
 c = const.c.cgs                   # cm/s
 
+
 #--------------------------------------------------------------
 
 tstart = time.time()
 
-t = np.array([10,20]) #np.arange(20,100)
+t = np.arange(20,100)
 
 alpha_gamma = calc_alpha_gamma(alpha_r)
 alpha_B = calc_alpha_B(alpha_r,s)
@@ -164,21 +154,21 @@ C_tau = calc_C_tau(B_0,r_0,eta,gamma_m_0)
 C_f = calc_C_f(B_0,r_0,d,p)
 nu_m = calc_nu_m(t,nu_m_0,t_0,alpha_gamma,alpha_B)
 x = (2.0/3.0) * (nu.value/nu_m.value)
-F2 = calc_F_2(x,calc_F,calc_K_n,p)
-#F3 = calc_F_3(x,calc_F,calc_K_n,p)
+F2 = calc_F_2(x,calc_F,p)
+F3 = calc_F_3(x,calc_F,p)
 tau_nu = calc_tau_nu(t,t_0,C_tau,alpha_r,alpha_gamma,alpha_B,alpha_scrpitF,p,nu,F2)
-
-#f_nu = calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3)
+f_nu = calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3)
 
 ## Write to table to verify with Dr.Corsi's code
 
-#final_t = t + t_exp
-#final_f_nu = f_nu
+final_t = t + t_exp
+final_f_nu = f_nu
 
-final_tab = Table([tau_nu,F2,t],names=["tau_nu","F2","epoch(days)"])
+final_tab = Table([final_t,f_nu,t],names=["t(JD)","f_nu(mJy)","epoch(days)"])
 final_tab.write("3GHz_SN2004dk_lc_PySSA_test.txt",format="ascii",overwrite=True)
 
 tend = time.time()
 print("Time taken to print lc for one frequency : ", (tend - tstart))
+
 ###########
 
