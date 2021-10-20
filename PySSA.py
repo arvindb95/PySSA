@@ -10,6 +10,8 @@ import time
 from astropy.table import Table
 import matplotlib.pyplot as plt
 
+from alive_progress import alive_bar
+
 ## Functions ##
 
 #--------------------------------------------------------------
@@ -36,13 +38,16 @@ def calc_F_2(x,calc_F,p):
         return np.sqrt(3) * integrate.quad(fy,0,x)[0]
     else:    
         F_2_x = []
-        counter = 0
-        for x_i in x:
-            counter += 1
-            print("------------------------------------------------------")
-            print("calculating F2 for iteration number : ",counter," out of 80")
-            fy = lambda y: calc_F(y) * (y**((p-2.0)/2.0))
-            F_2_x.append(np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
+        print("Calculating function F2....")
+        with alive_bar(len(x)) as bar:
+            for x_i in x:
+                #counter += 1
+                #print("------------------------------------------------------")
+                #print("calculating F2 for iteration number : ",counter," out of ",len(x))
+                fy = lambda y: calc_F(y) * (y**((p-2.0)/2.0))
+                F_2_x.append(np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
+                bar()
+        print("===========================")
         return np.array(F_2_x)
 
 def calc_F_3(x,calc_F,p):
@@ -51,13 +56,16 @@ def calc_F_3(x,calc_F,p):
         return np.sqrt(3) * integrate.quad(fy,0,x)[0]
     else:
         F_3_x = []
-        counter = 0
-        for x_i in x:
-            counter += 1
-            print("------------------------------------------------------")
-            print("calculating F3 for iteration number : ",counter," out of 80")
-            fy = lambda y: calc_F(y) * (y**((p-3.0)/2.0))
-            F_3_x.append(np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
+        print("Calculating function F3....")
+        with alive_bar(len(x)) as bar:
+            for x_i in x:
+                #counter += 1
+                #print("------------------------------------------------------")
+                #print("calculating F3 for iteration number : ",counter," out of ",len(x))
+                fy = lambda y: calc_F(y) * (y**((p-3.0)/2.0))
+                F_3_x.append(np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
+                bar()
+        print("===========================")
         return np.array(F_3_x)
 
 #--------------------------------------------------------------
@@ -145,7 +153,7 @@ c = const.c.cgs                   # cm/s
 
 tstart = time.time()
 
-t = np.arange(20,100)
+t = np.arange(1,1001) 
 
 alpha_gamma = calc_alpha_gamma(alpha_r)
 alpha_B = calc_alpha_B(alpha_r,s)
@@ -156,6 +164,17 @@ nu_m = calc_nu_m(t,nu_m_0,t_0,alpha_gamma,alpha_B)
 x = (2.0/3.0) * (nu.value/nu_m.value)
 F2 = calc_F_2(x,calc_F,p)
 F3 = calc_F_3(x,calc_F,p)
+
+# For large values of x, F2 and F3 do not vary as stated in Soderberg et al.
+# 2005 but the integrator breaks. So replace the really small values of F2 and
+# F3 with their last respective non-small value. 
+
+sel_large_x = np.where(x >= 22778.5451769)
+F2[sel_large_x] = F2[sel_large_x][0]
+F3[sel_large_x] = F3[sel_large_x][0]
+
+# Finally calculate tau_nu and f_nu
+
 tau_nu = calc_tau_nu(t,t_0,C_tau,alpha_r,alpha_gamma,alpha_B,alpha_scrpitF,p,nu,F2)
 f_nu = calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3)
 
@@ -164,7 +183,7 @@ f_nu = calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3)
 final_t = t + t_exp
 final_f_nu = f_nu
 
-final_tab = Table([final_t,f_nu,t],names=["t(JD)","f_nu(mJy)","epoch(days)"])
+final_tab = Table([final_t,f_nu,t,F2,F3],names=["t(JD)","f_nu(mJy)","epoch(days)","F2","F3"])
 final_tab.write("3GHz_SN2004dk_lc_PySSA_test.txt",format="ascii",overwrite=True)
 
 tend = time.time()
