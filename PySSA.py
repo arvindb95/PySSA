@@ -27,11 +27,11 @@ def calc_F(x):
         fy = lambda y: special.kv(5.0/3.0,y)
         return (x * integrate.quad(fy,x,np.inf)[0])
     else:
-        F_x = []
-        for x_i in x:
+        F_x = np.zeros(len(x))
+        for i,x_i in enumerate(x):
             fy = lambda y: special.kv(5.0/3.0,y)
-            F_x.append(x_i * integrate.quad(fy,x_i,np.inf)[0])
-        return np.array(F_x)
+            F_x[i] = (x_i * integrate.quad(fy,x_i,np.inf)[0])
+        return F_x
     
 def calc_F_2(x,calc_F,p):
     """
@@ -42,18 +42,20 @@ def calc_F_2(x,calc_F,p):
         fy = lambda y: calc_F(y) * (y**((p-2.0)/2.0))
         return np.sqrt(3) * integrate.quad(fy,0,x)[0]
     else:    
-        F_2_x = []
+        F_2_x = np.zeros(len(x))
         print("Calculating function F2....")
         with alive_bar(len(x)) as bar:
-            for x_i in x:
+            for i,x_i in enumerate(x):
                 #counter += 1
                 #print("------------------------------------------------------")
                 #print("calculating F2 for iteration number : ",counter," out of ",len(x))
                 fy = lambda y: calc_F(y) * (y**((p-2.0)/2.0))
-                F_2_x.append(np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
+                F_2_x[i] = (np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
                 bar()
+        sel_large_x = np.where(x >= 22778.5451769)
+        F_2_x[sel_large_x] = F_2_x[sel_large_x][0]    
         print("===========================")
-        return np.array(F_2_x)
+        return F_2_x
 
 def calc_F_3(x,calc_F,p):
     """
@@ -64,18 +66,20 @@ def calc_F_3(x,calc_F,p):
         fy = lambda y: calc_F(y) * (y**((p-3.0)/2.0))
         return np.sqrt(3) * integrate.quad(fy,0,x)[0]
     else:
-        F_3_x = []
+        F_3_x = np.zeros(len(x))
         print("Calculating function F3....")
         with alive_bar(len(x)) as bar:
-            for x_i in x:
+            for i,x_i in enumerate(x):
                 #counter += 1
                 #print("------------------------------------------------------")
                 #print("calculating F3 for iteration number : ",counter," out of ",len(x))
                 fy = lambda y: calc_F(y) * (y**((p-3.0)/2.0))
-                F_3_x.append(np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
+                F_3_x[i] = (np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
                 bar()
+        sel_large_x = np.where(x >= 22778.5451769)
+        F_3_x[sel_large_x] = F_3_x[sel_large_x][0]
         print("===========================")
-        return np.array(F_3_x)
+        return F_3_x
 
 #--------------------------------------------------------------
 
@@ -150,79 +154,79 @@ def calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3):
 #--------------------------------------------------------------
 #--------------------------------------------------------------
 
-### Test Calculations ##
+## Test Calculations ##
 
 
-### Use the following lines of code to generate an SSA lightcurve with your own
-### set of parameters.
-##--------------------------------------------------------------
+## Use the following lines of code to generate an SSA lightcurve with your own
+## set of parameters.
+#--------------------------------------------------------------
 
-### Main physical parameters
+## Main physical parameters
 
-#d = (23.0 * u.Mpc).to(u.cm)       # cm ; distance to source
-#t_exp = 2453216.7                 # JD ; time of explosion
-#t_0 = 10                          # reference time 10 days since explosion
-#eta = 4                           # shell radius to thickness factor 
-#nu = 3.0e09 * u.Hz                # frequency of observation in Hz
-
-
-#B_0 = 1.06 * u.G                  # G
-#r_0 = 5.0e15 * u.cm               # cm
-#alpha_r = 0.9
-#p = 3.0
-#nu_m_0 = 0.02e9 * u.Hz            # Hz 
-#s = 2.0
-#zeta = 1.0
-
-#scriptF_0 = 1.0                   # as we have eps_e = eps_B
-#alpha_scrpitF = 0.0               # as we have eps_e = eps_B at all times
-
-## Physical constants
-
-#m_e = const.m_e.cgs               # g
-#e = const.e.esu                   # esu
-#c = const.c.cgs                   # cm/s
+d = (23.0 * u.Mpc).to(u.cm)       # cm ; distance to source
+t_exp = 2453216.7                 # JD ; time of explosion
+t_0 = 10                          # reference time 10 days since explosion
+eta = 4                           # shell radius to thickness factor 
+nu = 3.0e09 * u.Hz                # frequency of observation in Hz
 
 
-##--------------------------------------------------------------
+B_0 = 1.06 * u.G                  # G
+r_0 = 5.0e15 * u.cm               # cm
+alpha_r = 0.9
+p = 3.0
+nu_m_0 = 0.02e9 * u.Hz            # Hz 
+s = 2.0
+zeta = 1.0
 
-#tstart = time.time()
+scriptF_0 = 1.0                   # as we have eps_e = eps_B
+alpha_scrpitF = 0.0               # as we have eps_e = eps_B at all times
 
-#t = np.arange(1,1001) 
+# Physical constants
 
-#alpha_gamma = calc_alpha_gamma(alpha_r)
-#alpha_B = calc_alpha_B(alpha_r,s)
-#gamma_m_0 = calc_gamma_m_0(B_0,nu_m_0)
-#C_tau = calc_C_tau(B_0,r_0,eta,gamma_m_0)
-#C_f = calc_C_f(B_0,r_0,d,p)
-#nu_m = calc_nu_m(t,nu_m_0,t_0,alpha_gamma,alpha_B)
-#x = (2.0/3.0) * (nu.value/nu_m.value)
-#F2 = calc_F_2(x,calc_F,p)
-#F3 = calc_F_3(x,calc_F,p)
+m_e = const.m_e.cgs               # g
+e = const.e.esu                   # esu
+c = const.c.cgs                   # cm/s
 
-### For large values of x, F2 and F3 do not vary as stated in Soderberg et al.
-### 2005 but the integrator breaks. So replace the really small values of F2 and
-### F3 with their last respective non-small value. 
+
+#--------------------------------------------------------------
+
+tstart = time.time()
+
+t = np.arange(1,1001) 
+
+alpha_gamma = calc_alpha_gamma(alpha_r)
+alpha_B = calc_alpha_B(alpha_r,s)
+gamma_m_0 = calc_gamma_m_0(B_0,nu_m_0)
+C_tau = calc_C_tau(B_0,r_0,eta,gamma_m_0)
+C_f = calc_C_f(B_0,r_0,d,p)
+nu_m = calc_nu_m(t,nu_m_0,t_0,alpha_gamma,alpha_B)
+x = (2.0/3.0) * (nu.value/nu_m.value)
+F2 = calc_F_2(x,calc_F,p)
+F3 = calc_F_3(x,calc_F,p)
+
+## For large values of x, F2 and F3 do not vary as stated in Soderberg et al.
+## 2005 but the integrator breaks. So replace the really small values of F2 and
+## F3 with their last respective non-small value. 
 
 #sel_large_x = np.where(x >= 22778.5451769)
 #F2[sel_large_x] = F2[sel_large_x][0]
 #F3[sel_large_x] = F3[sel_large_x][0]
 
-### Finally calculate tau_nu and f_nu
+## Finally calculate tau_nu and f_nu
 
-#tau_nu = calc_tau_nu(t,t_0,C_tau,alpha_r,alpha_gamma,alpha_B,alpha_scrpitF,p,nu,F2)
-#f_nu = calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3)
+tau_nu = calc_tau_nu(t,t_0,C_tau,alpha_r,alpha_gamma,alpha_B,alpha_scrpitF,p,nu,F2)
+f_nu = calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3)
 
-### Write to table 
+## Write to table 
 
-#final_t = t + t_exp
-#final_f_nu = f_nu
+final_t = t + t_exp
+final_f_nu = f_nu
 
-#final_tab = Table([final_t,f_nu,t,F2,F3],names=["t(JD)","f_nu(mJy)","epoch(days)","F2","F3"])
-#final_tab.write("3GHz_SN2004dk_lc_PySSA_test.txt",format="ascii",overwrite=True)
+final_tab = Table([final_t,f_nu,t,F2,F3],names=["t(JD)","f_nu(mJy)","epoch(days)","F2","F3"])
+final_tab.write("3GHz_SN2004dk_lc_PySSA_test.txt",format="ascii",overwrite=True)
 
-#tend = time.time()
-#print("Time taken to print lc for one frequency : ", (tend - tstart))
+tend = time.time()
+print("Time taken to print lc for one frequency : ", (tend - tstart))
 
-###########
+##########
 
