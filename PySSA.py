@@ -136,12 +136,12 @@ def calc_tau_nu(t,t_0,C_tau,alpha_r,alpha_gamma,alpha_B,alpha_scrpitF,p,nu,F2):
 
 # Finally calculate flux density
 
-def calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3):
+def calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,xi,p,nu,F2,F3):
     """
     Calculate f_nu at t (see eq. A8 of Soderberg et al. 2005)
     """
     eq1 = C_f*((t/t_0)**((4.0*alpha_r-alpha_B)/2.0))
-    eq2 = ((1.0 - np.exp(-tau_nu**(zeta)))**(1.0/zeta)) * (nu**(5.0/2.0)) * F3/F2
+    eq2 = ((1.0 - np.exp(-tau_nu**(xi)))**(1.0/xi)) * (nu**(5.0/2.0)) * F3/F2
     return (((eq1 * eq2) * (u.erg / u.s /(u.cm)**2.0 /u.Hz)).to(u.mJy)).value
 
 ###--------------------------------------------------------------
@@ -169,7 +169,7 @@ def calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3):
 #p = 3.0
 #nu_m_0 = 0.02e9 #* u.Hz            # Hz 
 #s = 2.0
-#zeta = 1.0
+#xi = 1.0
 #
 #scriptF_0 = 1.0                   # as we have eps_e = eps_B
 #alpha_scrpitF = 0.0               # as we have eps_e = eps_B at all times
@@ -209,7 +209,7 @@ def calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3):
 ### Finally calculate tau_nu and f_nu
 #
 #tau_nu = calc_tau_nu(t,t_0,C_tau,alpha_r,alpha_gamma,alpha_B,alpha_scrpitF,p,nu,F2)
-#f_nu = calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,zeta,p,nu,F2,F3)
+#f_nu = calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,xi,p,nu,F2,F3)
 #
 ### Write to table 
 #
