@@ -17,6 +17,39 @@ m_e = (const.m_e.cgs).value               # g
 e = (const.e.esu).value                   # esu
 c = (const.c.cgs).value                   # cm/s
 
+###--------------------------------------------------------------
+### Use the following lines of code to generate an SSA lightcurve with your own
+### set of parameters.
+##--------------------------------------------------------------
+#
+### Main physical parameters
+#
+#d = ((23.0 * u.Mpc).to(u.cm)).value      # cm ; distance to source
+#t_exp = 2453216.7                        # JD ; time of explosion
+#t_0 = 10                                 # reference time 10 days since explosion
+#eta = 4                                  # shell radius to thickness factor 
+#nu = 3.0e09 #* u.Hz                      # frequency of observation in Hz
+#
+#
+#B_0 = 1.06 #* u.G                  # G
+#r_0 = 5.0e15 #* u.cm               # cm
+#alpha_r = 0.9
+#p = 3.0
+#nu_m_0 = 0.02e9 #* u.Hz            # Hz 
+#s = 2.0
+#xi = 1.0
+#
+#scriptF_0 = 1.0                   # as we have eps_e = eps_B
+#alpha_scrpitF = 0.0               # as we have eps_e = eps_B at all times
+#
+## Physical constants
+#
+#m_e = (const.m_e.cgs).value               # g
+#e = (const.e.esu).value                   # esu
+#c = (const.c.cgs).value                   # cm/s
+
+##--------------------------------------------------------------
+
 ## Functions ##
 
 #--------------------------------------------------------------
@@ -50,8 +83,9 @@ def calc_F_2(x,calc_F,p):
         F_2_x = np.zeros(len(x))
         for i,x_i in enumerate(x):
             fy = lambda y: calc_F(y) * (y**((p-2.0)/2.0))
-            F_2_x[i] = (np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
-            if (x_i > 22778.5451769):
+            if (x_i < 22778.5451769):
+                F_2_x[i] = (np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
+            else:
                 F_2_x[i:] = (np.sqrt(3) * integrate.quad(fy,0,22778.5451769)[0]) 
         return F_2_x
 
@@ -67,11 +101,10 @@ def calc_F_3(x,calc_F,p):
         F_3_x = np.zeros(len(x))
         for i,x_i in enumerate(x):
             fy = lambda y: calc_F(y) * (y**((p-3.0)/2.0))
-            F_3_x[i] = (np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
-            
             if (x_i > 22778.5451769):
-                F_3_x[i:] = (np.sqrt(3) * integrate.quad(fy,0,22778.5451769)[0])
-        
+                F_3_x[i] = (np.sqrt(3) * integrate.quad(fy,0,x_i)[0])
+            else:
+                F_3_x[i:] = (np.sqrt(3) * integrate.quad(fy,0,22778.5451769)[0]) 
         return F_3_x
 
 #--------------------------------------------------------------
@@ -143,8 +176,6 @@ def calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,xi,p,nu,F2,F3):
     eq1 = C_f*((t/t_0)**((4.0*alpha_r-alpha_B)/2.0))
     eq2 = ((1.0 - np.exp(-tau_nu**(xi)))**(1.0/xi)) * (nu**(5.0/2.0)) * F3/F2
     return (((eq1 * eq2) * (u.erg / u.s /(u.cm)**2.0 /u.Hz)).to(u.mJy)).value
-
-
 
 ###--------------------------------------------------------------
 ###--------------------------------------------------------------
