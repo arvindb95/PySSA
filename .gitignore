@@ -1,2 +1,5 @@
-./reading
-./SN2004dk_test
+__pychache__
+test
+*.h5
+*.pdf
+*.txt
