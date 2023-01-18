@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import matplotlib as mpl
 from chainconsumer import ChainConsumer
+import os
 
 params = {
     'font.family': 'serif',
@@ -29,19 +30,19 @@ t_0 = 10                                  # reference time 10 days since explosi
 eta = 4                                   # shell radius to thickness factor
 nu = 3.0e09                               # frequency of observation in Hz
 
-B_0 = 1.0                    # G
+B_0 = 0.5                    # G
 r_0 = 5.0e15                 # cm
 log_r_0 = np.log10(r_0)     
 alpha_r = 0.9
 p = 3.0
 nu_m_0 = 0.02e9              # Hz
 log_nu_m_0 = np.log10(nu_m_0)
-s = 2.0
-xi = 1.0
+s = 0.0
+xi = 0.5
 
-guess_parameters = B_0, np.log10(r_0)#, alpha_r, p, np.log10(nu_m_0), s, xi
+#guess_parameters = B_0, np.log10(r_0)#, alpha_r, p, np.log10(nu_m_0), s, xi
 
-#guess_parameters = B_0, s, xi
+guess_parameters = B_0, s, xi
 
 scriptF_0 = 1.0                   # as we have eps_e = eps_B
 alpha_scrpitF = 0.0               # as we have eps_e = eps_B at all times
@@ -58,8 +59,8 @@ c = (const.c.cgs).value                   # cm/s
 def lnprior(theta):
     #B_0, log_r_0, alpha_r, p, log_nu_m_0, s, xi = theta
 
-    B_0, log_r_0 = theta
-    #B_0, s, xi = theta
+    #B_0, log_r_0 = theta
+    B_0, s, xi = theta
 
     if (B_0 >= 1.0e-50) and (10**(log_r_0) >= 1.0e-50) and (1.0e-50 <= alpha_r <= 1.0) and (2.01 <= p <= 5.0) and (10**(log_nu_m_0) > 0.0) and (s >= 0.0) and (0.0 <= xi <= 1.0) :
         return 0.0
@@ -68,9 +69,9 @@ def lnprior(theta):
 
 def lnlike(theta,t,t_0,nu,F_obs,F_err):
     #B_0, log_r_0, alpha_r, p, log_nu_m_0, s, xi = theta
-    B_0, log_r_0 = theta
+    #B_0, log_r_0 = theta
 
-    #B_0, s, xi = theta
+    B_0, s, xi = theta
     
     alpha_gamma = calc_alpha_gamma(alpha_r)
     alpha_B = calc_alpha_B(alpha_r,s)
@@ -100,16 +101,19 @@ def lnprob(theta,t,t_0,nu,F_obs,F_err):
 
 def get_starting_pos(guess_parameters, nwalkers, ndim=7):
     B_0 = guess_parameters[0]
-    log_r_0 = guess_parameters[1]
+    #log_r_0 = guess_parameters[1]
     #alpha_r = guess_parameters[2]
     #p = guess_parameters[3]
     #log_nu_m_0 = guess_parameters[4]
     #s = guess_parameters[5]
     #xi = guess_parameters[6]
+    s = guess_parameters[1]
+    xi = guess_parameters[2]
+
 
     #pos = [np.asarray([B_0, log_r_0, alpha_r, p, log_nu_m_0, s, xi]) + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
-    pos = [np.asarray([B_0, log_r_0]) + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
-    #pos = [np.asarray([B_0, s, xi]) + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+    #pos = [np.asarray([B_0, log_r_0]) + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+    pos = [np.asarray([B_0, s, xi]) + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
     return pos
 
 def run_mcmc(data_table, guess_parameters, pool, backend_file, t_0 = 10, niters=500, nwalkers=200, ndim=7, restart=False):
@@ -119,7 +123,7 @@ def run_mcmc(data_table, guess_parameters, pool, backend_file, t_0 = 10, niters=
     F_err = data_table['col4'].data /1000      ### Make sure this is in mJy
 
     pos = get_starting_pos(guess_parameters,nwalkers, ndim=ndim)
-    
+
     backend = emcee.backends.HDFBackend(backend_file)
     if (restart==False):
         backend.reset(nwalkers, ndim)
@@ -157,7 +161,8 @@ def run_mcmc(data_table, guess_parameters, pool, backend_file, t_0 = 10, niters=
 
 ## ------------ Load data ------------##
 
-data_table = Table.read("SN2004dk_final_data_100days_test.txt",format="ascii")
+#data_table = Table.read("SN2004dk_final_data_100days.txt",format="ascii")
+data_table = Table.read("SN2004dk_final_data_later_times.txt", format="ascii")
 t = data_table['col1'].data
 t_0 = 10
 nu = data_table['col2'].data * 10**9       ### Make sure this is in Hz
@@ -170,11 +175,11 @@ F_err = data_table['col4'].data /1000      ### Make sure this is in mJy
 #method = 'L-BFGS-B'
 
 #nll = lambda *args: -lnlike(*args)
-#bnds = [(1.0e-50,np.inf),(-50.0,np.inf)]
+#bnds = [(1.0e-50,np.inf),(0.0,np.inf),(0.0,1.0)]
 #better_guess_params = op.minimize(nll, guess_parameters, bounds=bnds, args=(t, t_0, nu,F, F_err), method=method)
 #print("The minimized parameters using "+method)
 #print(better_guess_params['x'])
 #print(better_guess_params)
 
 with Pool() as pool:
-    sampler = run_mcmc(data_table, guess_parameters, niters=200, nwalkers=10, ndim=2, pool=pool, backend_file="first_100_days_chain_new_lnlike.h5", restart=True)
+    sampler = run_mcmc(data_table, guess_parameters, niters=2000, nwalkers=10, ndim=3, pool=pool, backend_file="later_times_chain.h5",restart=True)

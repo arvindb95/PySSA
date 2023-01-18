@@ -177,6 +177,32 @@ def calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,xi,p,nu,F2,F3):
     eq2 = ((1.0 - np.exp(-tau_nu**(xi)))**(1.0/xi)) * (nu**(5.0/2.0)) * F3/F2
     return (((eq1 * eq2) * (u.erg / u.s /(u.cm)**2.0 /u.Hz)).to(u.mJy)).value
 
+
+#--------------------------------------------------------------
+
+# One function to calculate the entire thing 
+
+def SSA_flux_density(t,t_0,nu,d,eta,B_0,r_0,alpha_r,p,nu_m_0,s,xi,scriptF_0,alpha_scriptF):
+    
+    log_r_0 = np.log10(r_0)
+    log_nu_m_0 = np.log10(nu_m_0)
+
+    alpha_gamma = calc_alpha_gamma(alpha_r)
+    alpha_B = calc_alpha_B(alpha_r,s)
+    gamma_m_0 = calc_gamma_m_0(B_0,10**(log_nu_m_0))
+    C_tau = calc_C_tau(B_0,10**(log_r_0),eta,gamma_m_0,p,scriptF_0)
+    C_f = calc_C_f(B_0,10**(log_r_0),d,p)
+
+    nu_m = calc_nu_m(t,10**(log_nu_m_0),t_0,alpha_gamma,alpha_B)
+    x = (2.0/3.0) * (nu/nu_m)
+    F2 = calc_F_2(x,calc_F,p)
+    F3 = calc_F_3(x,calc_F,p)
+
+    tau_nu = calc_tau_nu(t,t_0,C_tau,alpha_r,alpha_gamma,alpha_B,alpha_scriptF,p,nu,F2)
+    f_nu = calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,xi,p,nu,F2,F3)
+    
+    return f_nu
+
 ###--------------------------------------------------------------
 ###--------------------------------------------------------------
 ##

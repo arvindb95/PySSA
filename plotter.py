@@ -4,14 +4,53 @@ import numpy as np
 import emcee
 from chainconsumer import ChainConsumer
 from PySSA import *
+import corner
 
-params = {
-    'font.family': 'serif',
-    'text.usetex': True}
+#params = {
+#    'font.family': 'serif',
+#    'text.usetex': True}
 
-mpl.rcParams.update(params)
+#mpl.rcParams.update(params)
 
-filename="first_100_days_chain_new_lnlike.h5"
+## ---------------------- Begin Code ---------------------- ##
+
+## Main physical parameters ##
+
+d = ((23.0 * u.Mpc).to(u.cm)).value       # cm ; distance to source
+t_exp = 2453216.7                         # JD ; time of explosion
+t_0 = 10                                  # reference time 10 days since explosion
+eta = 4                                   # shell radius to thickness factor
+nu = 3.0e09                               # frequency of observation in Hz
+
+B_0 = 1.0                    # G
+r_0 = 5.0e15                 # cm
+log_r_0 = np.log10(r_0)
+alpha_r = 0.9
+p = 3.0
+nu_m_0 = 0.02e9              # Hz
+log_nu_m_0 = np.log10(nu_m_0)
+s = 1.0
+xi = 0.9
+
+scriptF_0 = 1.0                   # as we have eps_e = eps_B
+alpha_scriptF = 0.0               # as we have eps_e = eps_B at all times
+
+
+#guess_parameters = B_0, np.log10(r_0)#, alpha_r, p, np.log10(nu_m_0), s, xi
+
+guess_parameters = B_0, s, xi
+
+scriptF_0 = 1.0                   # as we have eps_e = eps_B
+alpha_scrpitF = 0.0               # as we have eps_e = eps_B at all times
+
+## Physical constants ##
+
+m_e = (const.m_e.cgs).value               # g
+e = (const.e.esu).value                   # esu
+c = (const.c.cgs).value                   # cm/s
+
+
+filename="later_times_chain.h5"
 
 reader = emcee.backends.HDFBackend(filename)
 
@@ -28,26 +67,57 @@ print("flat chain shape: {0}".format(samples.shape))
 #print("flat log prob shape: {0}".format(log_prob_samples.shape))
 #print("flat log prior shape: {0}".format(log_prior_samples.shape))
 
-ndim = 2
+ndim = 3
 
-fig, axes = plt.subplots(ndim, figsize=(10, 14), sharex=True)
-labels=[r"$B_{{0}}$",r"$r_{{0}}$"]
-for i in range(ndim):
-    ax = axes[i]
-    ax.plot(samples[:, i], "C0", alpha=0.7)
-    ax.set_xlim(0, len(samples))
-    ax.set_ylabel(labels[i])
-    ax.axvline(burnin,color="r")
-    ax.yaxis.set_label_coords(-0.1, 0.5)
+B_best_fit = np.percentile(samples[:,0], [16,50,84])
+s_best_fit = np.percentile(samples[:,1], [16,50,84])
+xi_best_fit = np.percentile(samples[:,2], [16,50,84])
+print(B_best_fit)
+print(s_best_fit)
+print(xi_best_fit)
 
-axes[-1].set_xlabel("step number")
+print(len(samples[:,0]))
 
-plt.savefig("parameter_variations.pdf")
+#fig, axes = plt.subplots(ndim, figsize=(10, 14), sharex=True)
+labels=[r"$B_{{0}}$",r"$s$",r"$\xi$"]
+#for i in range(ndim):
+#    ax = axes[i]
+#    ax.plot(samples[:, i], "C0", alpha=0.7)
+#    ax.set_xlim(0, len(samples))
+#    ax.set_ylabel(labels[i])
+#    ax.axvline(burnin,color="r")
+#    ax.yaxis.set_label_coords(-0.1, 0.5)
+
+#axes[-1].set_xlabel("step number")
+
+#plt.savefig("parameter_variations_later_times.pdf")
 
 c = ChainConsumer()
-c.add_chain(samples, parameters=[r"$B_{{0}}$", r"$log_{{10}}(r_{{0}}$)"],usetex=True)
+c.add_chain(samples, parameters=labels)
+#c.configure(statistics="cumulative")
 
-fig2 = c.plotter.plot(figsize=(8,7))
+B_best_fit = c.analysis.get_summary()[labels[0]][1]
+s_best_fit = c.analysis.get_summary()[labels[1]][1]
+xi_best_fit = c.analysis.get_summary()[labels[2]][1]
 
-plt.savefig("corner_test.pdf")
+fig2 = c.plotter.plot(figsize=(8,7), truth=[B_best_fit,s_best_fit,xi_best_fit])
 
+plt.savefig("corner_test_later_timesi_maxlik.pdf")
+
+data_table = Table.read("SN2004dk_final_data_later_times.txt",format="ascii")
+t_obs = data_table['col1'].data
+t_0 = 10
+nu = data_table['col2'].data * 10**9       ### Make sure this is in Hz
+F = data_table['col3'].data / 1000         ### Make sure this is in mJy
+F_err = data_table['col4'].data /1000      ### Make sure this is in mJy
+
+t = np.logspace(2,4,100)
+
+ssa_fnu = SSA_flux_density(t,t_0,3e9,d,eta,B_best_fit,r_0,alpha_r,p,nu_m_0,s_best_fit,xi_best_fit,scriptF_0,alpha_scriptF)
+
+fig3 = plt.figure()
+
+plt.plot(t,ssa_fnu)
+plt.yscale("log")
+plt.xscale("log")
+plt.show()
