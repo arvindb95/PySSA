@@ -194,13 +194,9 @@ def SSA_flux_density(t,t_0,nu,d,eta,B_0,r_0,alpha_r,p,nu_m_0,s,xi,scriptF_0,alph
     C_f = calc_C_f(B_0,10**(log_r_0),d,p)
 
     nu_m = calc_nu_m(t,10**(log_nu_m_0),t_0,alpha_gamma,alpha_B)
-    print("nu_m : ",nu_m)
     x = (2.0/3.0) * (nu/nu_m)
-    print("x : ",x)
     F2 = calc_F_2(x,calc_F,p)
-    print("F2 : ",F2)
     F3 = calc_F_3(x,calc_F,p)
-    print("F3 : ",F3)
 
     tau_nu = calc_tau_nu(t,t_0,C_tau,alpha_r,alpha_gamma,alpha_B,alpha_scriptF,p,nu,F2)
     f_nu = calc_f_nu(t,t_0,C_f,alpha_r,alpha_B,tau_nu,xi,p,nu,F2,F3)
