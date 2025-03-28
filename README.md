@@ -4,12 +4,16 @@ Python implementation of the Sychrotron Self Absorbed (SSA) model from
 
 ## Usage 
 - Use `PySSA.py` to generate an SSA lightcurve for your choice of parameters. 
-- Script `SSA_MCMC_fit.py` can be used to run an MCMC fit to get best fit SSA model for your dataset
-- To make pretty plots of the MCMC chains, correlation plots etc..., use `plotter.py`
+- The `plot_lc.py` code allows you to make the lightcurve  plot. Here the example shown is to reproduce figure 2 of the above paper. 
+- The `comprehensive_soderberg_data.csv` file contains the relevant data from the above paper to plot the light curve for supernova 2003L. 
+
+![Here is the output of `plot_lc.py`. Compare this with Figure 2 of [Soderberg et al. 2005](https://ui.adsabs.harvard.edu/abs/2005ApJ...621..908S/abstract)](Soderberg_2005_figure2.jpg "SN 2003L lightcurve")
 
 ## To do
-- Method to choose only required number of parameters and set others to constant
-- Make README more user friendly
+
+- Make calculations of integrals faster in `PySSA.py`
+- Add MCMC fitting script
+- Add plotter scripts for visualysing MCMC fits using [ChainConsumer](https://samreay.github.io/ChainConsumer/)
 - Add list of dependancies 
 
 
