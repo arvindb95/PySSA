@@ -14,7 +14,7 @@ Python implementation of the Sychrotron Self Absorbed (SSA) model from
   Here is the output lightcurve. Compare this with Figure 2 of <a href="https://ui.adsabs.harvard.edu/abs/2005ApJ...621..908S/abstract">Soderberg et al. 2005</a>
 </p>
 
-- Added `SSA_MCMC_fit.py` to perform fit of the SSA model. `MCMC_plotter.py` helps to make the corner plots and the walks.
+- Added `SSA_MCMC_fit.py` to perform fit of the SSA model. `MCMC_plotter.py` helps to make the corner plots and the walks (see the package [ChainConsumer](https://samreay.github.io/ChainConsumer/)).
 
 
 <p align="center">
