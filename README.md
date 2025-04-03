@@ -36,7 +36,6 @@ Python implementation of the Sychrotron Self Absorbed (SSA) model from
 ## To do
 
 - Make calculations of integrals faster in `PySSA.py`
-- Add plotter script to plot error in best fit model
 - Add list of dependancies 
 
 
