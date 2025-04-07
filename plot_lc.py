@@ -86,4 +86,4 @@ ax.set_ylabel(r"Flux density ($\mu$Jy)")
 
 ax.set_xscale("log")
 ax.set_yscale("log")
-plt.savefig("Soderberg_2005_figure2.jpg")
+plt.savefig("Soderberg_2005_figure2.jpg", dpi=300)

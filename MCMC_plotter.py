@@ -69,7 +69,6 @@ mcmc_best_fit_tab = Table(
 )
 
 
-
 mcmc_best_fit_tab.write("mcmc_best_fit_params.txt", format="ascii", overwrite=True)
 
 # Now plotting
@@ -89,8 +88,7 @@ c.set_plot_config(
 c.add_truth(Truth(location=loc_best_fit))
 
 c.plotter.plot()
-plt.savefig("best_fit_corner_plot.jpg")
+plt.savefig("best_fit_corner_plot.jpg", dpi=300)
 
 c.plotter.plot_walks(convolve=100, plot_weights=False)
-plt.savefig("walks.jpg")
-    
+plt.savefig("walks.jpg", dpi=300)

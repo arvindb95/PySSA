@@ -101,48 +101,52 @@ f_nu_ul_list = []
 freq_list = []
 t_list = []
 
-#for t_r in np.logspace(1, 3, 25):
-#    print("===============for t = ", t_r)
-#    for nu_i in uniq_freqs:
-#        f_nu = []
-#        for p in tqdm(range(len(final_param_set))):
-#            params.update(
-#                {
-#                    "B_0": final_param_set[p][0],
-#                    "r_0": 10 ** (final_param_set[p][1]),
-#                    "alpha_r": final_param_set[p][2],
-#                    "xi": final_param_set[p][3],
-#                }
-#            )
-#            f_nu.append(SSA_flux_density(t=t_r, nu=nu_i * 1e9, **params))
-#        f_nu_ll_list.append(min(f_nu))
-#        f_nu_ul_list.append(max(f_nu))
-#        t_list.append(t_r)
-#        freq_list.append(nu_i)
-#
-#
-#error_table = Table(
-#    [t_list, freq_list, f_nu_ll_list, f_nu_ul_list],
-#    names=["times", "freqs", "f_nu_ll", "f_nu_ul"],
-#)
+for t_r in np.logspace(1, 3, 25):
+    print("===============for t = ", t_r)
+    for nu_i in uniq_freqs:
+        f_nu = []
+        for p in tqdm(range(len(final_param_set))):
+            params.update(
+                {
+                    "B_0": final_param_set[p][0],
+                    "r_0": 10 ** (final_param_set[p][1]),
+                    "alpha_r": final_param_set[p][2],
+                    "xi": final_param_set[p][3],
+                }
+            )
+            f_nu.append(SSA_flux_density(t=t_r, nu=nu_i * 1e9, **params))
+        f_nu_ll_list.append(min(f_nu))
+        f_nu_ul_list.append(max(f_nu))
+        t_list.append(t_r)
+        freq_list.append(nu_i)
 
 
-error_table = Table.read('error_table.txt', format="ascii")
+error_table = Table(
+    [t_list, freq_list, f_nu_ll_list, f_nu_ul_list],
+    names=["times", "freqs", "f_nu_ll", "f_nu_ul"],
+)
 
-error_times = error_table['times'].data
-error_freqs = error_table['freqs'].data
-f_nu_ll = error_table['f_nu_ll'].data
-f_nu_ul = error_table['f_nu_ul'].data
+
+error_table = Table.read("error_table.txt", format="ascii")
+
+error_times = error_table["times"].data
+error_freqs = error_table["freqs"].data
+f_nu_ll = error_table["f_nu_ll"].data
+f_nu_ul = error_table["f_nu_ul"].data
 
 for i in tqdm(range(len(uniq_freqs))):
-    
-    sel_error_data = np.where(error_freqs==uniq_freqs[i])
-    
+    sel_error_data = np.where(error_freqs == uniq_freqs[i])
+
     ssa_fnu = SSA_flux_density(t=t_range, nu=uniq_freqs[i] * 1e9, **params)
     ax.plot(t_range, ssa_fnu, linewidth=0.5, color=colors[i])
-    ax.fill_between(error_times[sel_error_data], f_nu_ll[sel_error_data], f_nu_ul[sel_error_data], color=colors[i], alpha=0.3, edgecolor='none')
-
-    
+    ax.fill_between(
+        error_times[sel_error_data],
+        f_nu_ll[sel_error_data],
+        f_nu_ul[sel_error_data],
+        color=colors[i],
+        alpha=0.3,
+        edgecolor="none",
+    )
 
 
 ax.legend(title="Frequency", ncol=2)
@@ -151,4 +155,4 @@ ax.set_ylabel(r"Flux density ($\mu$Jy)")
 
 ax.set_xscale("log")
 ax.set_yscale("log")
-plt.savefig("Soderberg_2005_figure2_SSA_fit.pdf")
+plt.savefig("Soderberg_2005_figure2_SSA_fit.jpg", dpi=300)
