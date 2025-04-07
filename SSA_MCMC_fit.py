@@ -183,28 +183,26 @@ def run_mcmc(
 
 ## ------------ Initial minimization ------------ ##
 
-# method = "L-BFGS-B"
-# nll = lambda *args: -lnlike(*args)
-# bnds = [(1.0e-50, np.inf), (1.0e-50, np.inf), (1.0e-50, 1.0), (0.0, 1.0)]
-# better_guess_params = op.minimize(
-#    nll,
-#    guess_parameters,
-#    bounds=bnds,
-#    args=(times, t_0, freqs * 1e9, fluxes, fluxerrs),
-#    method=method,
-#    options={"disp": True},
-# )
-# print("The minimized parameters using " + method)
-# print(better_guess_params["x"])
-# print(better_guess_params)
+method = "L-BFGS-B"
+nll = lambda *args: -lnlike(*args)
+better_guess_params = op.minimize(
+    nll,
+    guess_paras,
+    bounds=bounds,
+    args=(times, t_0, freqs * 1e9, fluxes, fluxerrs),
+    method=method,
+    options={"disp": True},
+)
+print("The minimized parameters using " + method)
+print(better_guess_params["x"])
 
-# with Pool() as pool:
-#    sampler = run_mcmc(
-#        [4.473e00, 1.568e01, 9.543e-01, 3.808e-01],
-#        niters=10,
-#        nwalkers=10,
-#        ndim=4,
-#        pool=pool,
-#        backend_file="SN2003L.h5",
-#        restart=False,
-#    )
+with Pool() as pool:
+    sampler = run_mcmc(
+        better_guess_params["x"],
+        niters=10,
+        nwalkers=10,
+        ndim=4,
+        pool=pool,
+        backend_file="SN2003L.h5",
+        restart=False,
+    )
