@@ -1,1 +1,2 @@
+*.pkl filter=lfs diff=lfs merge=lfs -text
 Interpolation_files/F_values.pkl filter=lfs diff=lfs merge=lfs -text
