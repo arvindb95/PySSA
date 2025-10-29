@@ -53,8 +53,6 @@ print(x)
 p = np.arange(2, 3.5, 0.1)
 
 F2 = []
-F2_x = []
-F2_p = []
 
 for j in tqdm(range(len(p))):
     print(
@@ -62,10 +60,9 @@ for j in tqdm(range(len(p))):
     )
     for i in tqdm(range(len(x))):
         F2.append(calc_F_2(x[i], calc_F, p[j]))
-        F2_x.append(x[i])
-        F2_p.append(p[j])
 
-val_dict = {"x": F2_x, "p": F2_p, "F2": F2}
+
+val_dict = {"x": x, "p": p, "F2": F2}
 
 
 with open("F2_values.pkl", "wb") as f:
