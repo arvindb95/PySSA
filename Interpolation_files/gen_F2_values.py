@@ -44,18 +44,21 @@ def calc_F_2(x, calc_F, p):
         return F_2_x
 
 
-x1 = np.arange(0, 20, 1e-6)
-x2 = np.arange(20, 700, 0.01)
+x1 = np.arange(0, 20, 1e-3)
+x2 = np.arange(20, 700)
 x = np.append(x1, x2)
 
 print(x)
 
-p = np.arange(2, 3.5, 1e-6)
+p = np.arange(2, 3.5, 0.1)
 
 F2 = []
 
-for i in tqdm(range(len(x))):
-    for j in tqdm(range(len(p))):
+for j in tqdm(range(len(p))):
+    print(
+        "----------------- calculating for p = " + str(p[j]) + " ----------------------"
+    )
+    for i in tqdm(range(len(x))):
         F2.append(calc_F_2(x[i], calc_F, p[j]))
 
 val_dict = {"x": x, "p": p, "F2": F2}

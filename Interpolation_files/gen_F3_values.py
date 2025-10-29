@@ -2,6 +2,7 @@ import numpy as np
 from scipy import integrate, special
 from astropy.table import Table
 from tqdm import tqdm
+import pickle
 
 
 def calc_F(x):
@@ -20,7 +21,6 @@ def calc_F(x):
         for i, x_i in enumerate(x):
             F_x[i] = x_i * integrate.quad(fy1, x_i, np.inf)[0]
         return F_x
-
 
 def calc_F_3(x, calc_F, p):
     """
@@ -42,17 +42,21 @@ def calc_F_3(x, calc_F, p):
                 F_3_x[i:] = np.sqrt(3) * integrate.quad(fy3, 0, 2000)[0]
         return F_3_x
 
-
-x1 = np.arange(0, 20, 1e-6)
-x2 = np.arange(20, 700, 0.01)
+x1 = np.arange(0, 20, 1e-3)
+x2 = np.arange(20, 700)
 x = np.append(x1, x2)
 
-p = np.arange(2, 3.5, 1e-6)
+print(x)
+
+p = np.arange(2, 3.5, 0.1)
 
 F3 = []
 
-for i in tqdm(range(len(x))):
-    for j in tqdm(range(len(p))):
+for j in tqdm(range(len(p))):
+    print(
+        "----------------- calculating for p = " + str(p[j]) + " ----------------------"
+    )
+    for i in tqdm(range(len(x))):
         F3.append(calc_F_3(x[i], calc_F, p[j]))
 
 val_dict = {"x": x, "p": p, "F3": F3}
@@ -61,3 +65,4 @@ val_dict = {"x": x, "p": p, "F3": F3}
 with open("F3_values.pkl", "wb") as f:
     pickle.dump(val_dict, f)
 
+# tab = Table([x, p, F2], names=["x", "p", "F2"])
