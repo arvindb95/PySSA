@@ -32,6 +32,7 @@ fixed_params = {
     "s": 2.0,
     "scriptF_0": 1.0,  # as we have eps_e = eps_B
     "alpha_scriptF": 0.0,  # as we have eps_e = eps_B at all times
+    "to_interp": False, # Whether to use interpolation from saved grid to speed up calculations of F2 and F3 functions
 }
 
 # Variable parameters

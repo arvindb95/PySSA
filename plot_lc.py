@@ -3,7 +3,6 @@ from astropy.table import Table
 from mycolorpy import colorlist as mcp
 import numpy as np
 from PySSA import *
-import pandas as pd
 
 plt.rcParams.update(
     {
@@ -60,7 +59,6 @@ scriptF_0 = 1.0  # as we have eps_e = eps_B
 alpha_scriptF = 0.0  # as we have eps_e = eps_B at all times
 t = np.logspace(1, 3, 100)
 
-
 for i in range(len(uniq_freqs)):
     ssa_fnu = SSA_flux_density(
         t,
@@ -77,6 +75,7 @@ for i in range(len(uniq_freqs)):
         xi,
         scriptF_0,
         alpha_scriptF,
+        to_interp=False,
     )
     ax.plot(t, ssa_fnu, linewidth=1, color=colors[i])
 
@@ -86,4 +85,7 @@ ax.set_ylabel(r"Flux density ($\mu$Jy)")
 
 ax.set_xscale("log")
 ax.set_yscale("log")
+
+
 plt.savefig("Soderberg_2005_figure2.jpg", dpi=300)
+plt.show()

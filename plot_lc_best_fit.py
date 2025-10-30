@@ -57,6 +57,7 @@ params = {
     "xi": 0.5,
     "scriptF_0": 1.0,  # as we have eps_e = eps_B
     "alpha_scriptF": 0.0,  # as we have eps_e = eps_B at all times
+    "to_interp": False, # Whether to use interpolation from saved grid to speed up calculations of F2 and F3 functions
 }
 
 best_fit_tab = Table.read("mcmc_best_fit_params.txt", format="ascii")
