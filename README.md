@@ -31,7 +31,7 @@ Python implementation of the Sychrotron Self Absorbed (SSA) model from
   Corner plot (top) and walks (bottom) obtained after SSA fit on the SN2003L data <a href="https://ui.adsabs.harvard.edu/abs/2005ApJ...621..908S/abstract">Soderberg et al. 2005</a>
 </p>
 
-### Calculations are now faster with an `to_interp` parameter in the `SSA_flux_density` function. The interpolated calculation is much faster $\mathcal{O}(10000)$ times faster and accurate to about $\mathcal{O}(10^{-5})$. 
+### Calculations are now faster with a `to_interp` parameter in the `SSA_flux_density` function. The interpolated calculation is much faster $\mathcal{O}(10000)$ times faster and accurate to about $\mathcal{O}(10^{-5})$. 
 
 
 ## To do
