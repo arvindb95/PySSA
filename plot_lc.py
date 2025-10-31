@@ -4,6 +4,8 @@ from mycolorpy import colorlist as mcp
 import numpy as np
 from PySSA import *
 
+import time
+
 plt.rcParams.update(
     {
         "text.usetex": True,
@@ -77,7 +79,34 @@ for i in range(len(uniq_freqs)):
         alpha_scriptF,
         to_interp=False,
     )
+
     ax.plot(t, ssa_fnu, linewidth=1, color=colors[i])
+
+    ssa_fnu_interp = SSA_flux_density(
+        t,
+        t_0,
+        uniq_freqs[i] * 1e9,
+        d,
+        eta,
+        B_0,
+        r_0,
+        alpha_r,
+        p,
+        nu_m_0,
+        s,
+        xi,
+        scriptF_0,
+        alpha_scriptF,
+        to_interp=True,
+    )
+    ax.plot(
+        t,
+        ssa_fnu_interp,
+        linewidth=3,
+        color=colors[i],
+        linestyle="dashed",
+        alpha=0.5,
+    )
 
 ax.legend(title="Frequency", ncol=2)
 ax.set_xlabel("Time since burst (days)")

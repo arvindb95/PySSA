@@ -23,7 +23,7 @@ c = (const.c.cgs).value  # cm/s
 # --------------------------------------------------------------
 
 
-# Define functions F, F_2 and F_3
+# Define functions F_2 and F_3
 
 to_interp = False
 
@@ -35,11 +35,9 @@ F2_x_values = F2_dict['x']
 F2_p_values = F2_dict['p']
 F2_values = F2_dict['F2']
 
-print(F2_values[-10:-1])
-
 F2_grid = np.array(F2_values).reshape(len(F2_p_values), len(F2_x_values))
 
-interp_func_F2 = interpolate.RegularGridInterpolator((np.unique(F2_x_values), np.unique(F2_p_values)), F2_grid.T, bounds_error = False)
+
 
 # for function F3
 
@@ -51,74 +49,78 @@ F3_values = F3_dict['F3']
 
 F3_grid = np.array(F3_values).reshape(len(F3_p_values), len(F3_x_values))
 
-interp_func_F3 = interpolate.RegularGridInterpolator((np.unique(F3_x_values), np.unique(F3_p_values)), F3_grid.T, bounds_error = False)
 
 
-def calc_F(x, to_interp=False):
+
+def calc_F(x):
     """
     Returns values of function F (defined in eq. A7 of Soderberg et al. 2005)
     at x
     """
-    if not to_interp:
-        def fy1(y):
-            return special.kv(5.0 / 3.0, y)
 
-        if isinstance(x, float):
-            return x * integrate.quad(fy1, x, np.inf)[0]
-        else:
-            F_x = np.zeros(len(x))
-            for i, x_i in enumerate(x):
-                F_x[i] = x_i * integrate.quad(fy1, x_i, np.inf)[0]
-            return F_x
+    def fy1(y):
+        return special.kv(5.0 / 3.0, y)
+
+    if isinstance(x, float):
+        return x * integrate.quad(fy1, x, np.inf)[0]
     else:
-        return interp_func_F(x)
+        F_x = np.zeros(len(x))
+        for i, x_i in enumerate(x):
+            F_x[i] = x_i * integrate.quad(fy1, x_i, np.inf)[0]
+        return F_x
+
     
     
-def calc_F_2(x, calc_F, p, to_interp=False):
+def calc_F_2(x, calc_F, p):
     """
     Returns values of function F2 (defined in eq. A7 of Soderberg et al. 2005)
     at x
     """
-    if not to_interp:
-        def fy2(y):
-            return calc_F(y) * (y ** ((p - 2.0) / 2.0))
 
-        if isinstance(x, float):
-            return np.sqrt(3) * integrate.quad(fy2, 0, x)[0]
-        else:
-            F_2_x = np.zeros(len(x))
-            for i, x_i in enumerate(x):
-                if x_i < 20000:
-                    F_2_x[i] = np.sqrt(3) * integrate.quad(fy2, 0, x_i)[0]
-                else:
-                    F_2_x[i:] = np.sqrt(3) * integrate.quad(fy2, 0, 20000)[0]
-            return F_2_x
+    def fy2(y):
+        return calc_F(y) * (y ** ((p - 2.0) / 2.0))
+
+    if isinstance(x, float):
+        return np.sqrt(3) * integrate.quad(fy2, 0, x)[0]
     else:
-        return interp_func_F2((x,p))
+        F_2_x = np.zeros(len(x))
+        for i, x_i in enumerate(x):
+            if x_i < 20000:
+                F_2_x[i] = np.sqrt(3) * integrate.quad(fy2, 0, x_i)[0]
+            else:
+                F_2_x[i:] = np.sqrt(3) * integrate.quad(fy2, 0, 20000)[0]
+        return F_2_x
+
+def calc_F_2_interp(x,p):    
+    
+    interp_func_F2 = interpolate.RegularGridInterpolator((np.unique(F2_x_values), np.unique(F2_p_values)), F2_grid.T, bounds_error = False, method="linear", fill_value=None)
+    return interp_func_F2((x,p))
         
         
-def calc_F_3(x, calc_F, p, to_interp=False):
+def calc_F_3(x, calc_F, p):
     """
     Returns values of function F3 (defined in eq. A7 of Soderberg et al. 2005)
     at x
     """
-    if not to_interp:
-        def fy3(y):
-            return calc_F(y) * (y ** ((p - 3.0) / 2.0))
 
-        if isinstance(x, float):
-            return np.sqrt(3) * integrate.quad(fy3, 0, x)[0]
-        else:
-            F_3_x = np.zeros(len(x))
-            for i, x_i in enumerate(x):
-                if x_i < 2000:
-                    F_3_x[i] = np.sqrt(3) * integrate.quad(fy3, 0, x_i)[0]
-                else:
-                    F_3_x[i:] = np.sqrt(3) * integrate.quad(fy3, 0, 2000)[0]
-            return F_3_x
+    def fy3(y):
+        return calc_F(y) * (y ** ((p - 3.0) / 2.0))
 
+    if isinstance(x, float):
+        return np.sqrt(3) * integrate.quad(fy3, 0, x)[0]
     else:
-        return interp_func_F3((x,p))
+        F_3_x = np.zeros(len(x))
+        for i, x_i in enumerate(x):
+            if x_i < 2000:
+                F_3_x[i] = np.sqrt(3) * integrate.quad(fy3, 0, x_i)[0]
+            else:
+                F_3_x[i:] = np.sqrt(3) * integrate.quad(fy3, 0, 2000)[0]
+        return F_3_x
+
+def calc_F_3_interp(x,p):  
+
+    interp_func_F3 = interpolate.RegularGridInterpolator((np.unique(F3_x_values), np.unique(F3_p_values)), F3_grid.T, bounds_error = False, method="linear", fill_value=None)
+    return interp_func_F3((x,p))
 
 # --------------------------------------------------------------
 
@@ -248,8 +250,12 @@ def SSA_flux_density(
     nu_m = calc_nu_m(t, 10 ** (log_nu_m_0), t_0, alpha_gamma, alpha_B)
     x = (2.0 / 3.0) * (nu / nu_m)
     print(x)
-    F2 = calc_F_2(x, calc_F, p, to_interp)
-    F3 = calc_F_3(x, calc_F, p, to_interp)
+    if to_interp:
+        F2 = calc_F_2(x, calc_F, p)
+        F3 = calc_F_3(x, calc_F, p)
+    else:
+        F2 = calc_F_2_interp(x, p)
+        F3 = calc_F_3_interp(x, p)        
 
     tau_nu = calc_tau_nu(
         t, t_0, C_tau, alpha_r, alpha_gamma, alpha_B, alpha_scriptF, p, nu, F2

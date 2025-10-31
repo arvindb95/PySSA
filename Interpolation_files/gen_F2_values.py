@@ -45,7 +45,7 @@ def calc_F_2(x, calc_F, p):
 
 
 x1 = np.arange(0, 20, 1e-3)
-x2 = np.arange(20, 700)
+x2 = np.arange(20, 10000)
 x = np.append(x1, x2)
 
 print(x)
@@ -61,9 +61,10 @@ for j in tqdm(range(len(p))):
     for i in tqdm(range(len(x))):
         F2.append(calc_F_2(x[i], calc_F, p[j]))
 
-
 val_dict = {"x": x, "p": p, "F2": F2}
 
 
 with open("F2_values.pkl", "wb") as f:
     pickle.dump(val_dict, f)
+
+# tab = Table([x, p, F2], names=["x", "p", "F2"])

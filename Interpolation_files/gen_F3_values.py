@@ -43,7 +43,7 @@ def calc_F_3(x, calc_F, p):
         return F_3_x
 
 x1 = np.arange(0, 20, 1e-3)
-x2 = np.arange(20, 700)
+x2 = np.arange(20, 10000)
 x = np.append(x1, x2)
 
 print(x)
@@ -58,7 +58,6 @@ for j in tqdm(range(len(p))):
     )
     for i in tqdm(range(len(x))):
         F3.append(calc_F_3(x[i], calc_F, p[j]))
-
 
 val_dict = {"x": x, "p": p, "F3": F3}
 
