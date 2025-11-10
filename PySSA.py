@@ -250,7 +250,7 @@ def SSA_flux_density(
     nu_m = calc_nu_m(t, 10 ** (log_nu_m_0), t_0, alpha_gamma, alpha_B)
     x = (2.0 / 3.0) * (nu / nu_m)
     print(x)
-    if to_interp:
+    if to_interp==False:
         F2 = calc_F_2(x, calc_F, p)
         F3 = calc_F_3(x, calc_F, p)
     else:
