@@ -236,7 +236,7 @@ def SSA_flux_density(
     t, t_0, nu, d, eta, B_0, r_0, alpha_r, p, nu_m_0, s, xi, scriptF_0, alpha_scriptF
 , to_interp):
     """
-    Returns SSA flux density (in mJy) as a function of time
+    Returns SSA flux density (in uJy) as a function of time
     """
     log_r_0 = np.log10(r_0)
     log_nu_m_0 = np.log10(nu_m_0)
