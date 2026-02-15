@@ -42,63 +42,40 @@ for i in range(len(uniq_freqs)):
 
 ## Borrow the physical parameters from Soderberg et al 2005 ()
 
+params = {
+    "d": ((92.0 * u.Mpc).to(u.cm)).value,  # cm ; distance to source
+    "t_0": 10,  # reference time 10 days since explosion
+    "eta": 10,  # shell radius to thickness factor
+    "B_0": 4.5,  # G
+    "r_0": 4.3e15,  # cm
+    "alpha_r": 0.96,
+    "p": 3.2,
+    "nu_m_0": 1e9,  # Hz
+    "s": 2.0,
+    "xi": 0.5,
+    "scriptF_0": 1.0,  # as we have eps_e = eps_B
+    "alpha_scriptF": 0.0,  # as we have eps_e = eps_B at all times
+    "to_interp": False,  # Whether to use interpolation from saved grid to speed up calculations of F2 and F3 functions
+}
+print(params)
+
+params_interp = params
+
+params_interp["to_interp"] = True
+
+print(params_interp)
+
 ## Main physical parameters ##
 
-d = ((92.0 * u.Mpc).to(u.cm)).value  # cm ; distance to source
-t_0 = 10  # reference time 10 days since explosion
-eta = 10  # shell radius to thickness factor
-
-B_0 = 4.5  # G
-r_0 = 4.3e15  # cm
-alpha_r = 0.96
-p = 3.2
-nu_m_0 = 1e9  # Hz
-log_nu_m_0 = np.log10(nu_m_0)
-s = 2.0
-xi = 0.5
-
-scriptF_0 = 1.0  # as we have eps_e = eps_B
-alpha_scriptF = 0.0  # as we have eps_e = eps_B at all times
+# as we have eps_e = eps_B at all times
 t = np.logspace(1, 3, 100)
 
 for i in range(len(uniq_freqs)):
-    ssa_fnu = SSA_flux_density(
-        t,
-        t_0,
-        uniq_freqs[i] * 1e9,
-        d,
-        eta,
-        B_0,
-        r_0,
-        alpha_r,
-        p,
-        nu_m_0,
-        s,
-        xi,
-        scriptF_0,
-        alpha_scriptF,
-        to_interp=False,
-    )
+    ssa_fnu = SSA_flux_density(t, uniq_freqs[i] * 1e9, **params)
 
     ax.plot(t, ssa_fnu, linewidth=1, color=colors[i])
 
-    ssa_fnu_interp = SSA_flux_density(
-        t,
-        t_0,
-        uniq_freqs[i] * 1e9,
-        d,
-        eta,
-        B_0,
-        r_0,
-        alpha_r,
-        p,
-        nu_m_0,
-        s,
-        xi,
-        scriptF_0,
-        alpha_scriptF,
-        to_interp=True,
-    )
+    ssa_fnu_interp = SSA_flux_density(t, uniq_freqs[i] * 1e9, **params_interp)
     ax.plot(
         t,
         ssa_fnu_interp,

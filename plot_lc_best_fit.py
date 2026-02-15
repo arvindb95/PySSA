@@ -57,7 +57,7 @@ params = {
     "xi": 0.5,
     "scriptF_0": 1.0,  # as we have eps_e = eps_B
     "alpha_scriptF": 0.0,  # as we have eps_e = eps_B at all times
-    "to_interp": False, # Whether to use interpolation from saved grid to speed up calculations of F2 and F3 functions
+    "to_interp": True,  # Whether to use interpolation from saved grid to speed up calculations of F2 and F3 functions
 }
 
 best_fit_tab = Table.read("mcmc_best_fit_params.txt", format="ascii")
@@ -74,6 +74,28 @@ for i in range(len(best_fit_params)):
     else:
         params.update({best_fit_params[i]: best_fit_vals[i]})
 
+## Calculate chi_sq
+
+n_of_obs = len(times)
+n_of_fit_params = 4
+
+dof = n_of_obs - n_of_fit_params
+
+
+def calc_chi_sq(flux, flux_errs, model):
+    return np.sum(((flux - model) ** 2) / (flux_errs**2))
+
+
+model = SSA_flux_density(t=times, nu=freqs * 1e9, **params)
+
+chi_sq = calc_chi_sq(fluxes, fluxerrs, model)
+
+print("###############################")
+print("Degrees of freedom = ", dof)
+print("Chi_sq = ", chi_sq)
+print("Reduced chi_sq = ", chi_sq / dof)
+print("###############################")
+
 # Calculate errors on F_nu
 filename = "SN2003L.h5"
 reader = emcee.backends.HDFBackend(filename)
@@ -87,6 +109,7 @@ sel_best_fit_values = np.ones(len(samples)).astype("bool")
 labels = [r"$B_{{0}}$", r"$\rm{{log}}_{{10}}r_{{0}}$", r"$\alpha_{{r}}$", r"$\xi$"]
 
 tab_labels = ["B_0", "log_r_0", "alpha_r", "xi"]
+
 
 for i in range(len(labels)):
     sel_best_fit_values &= (ll_values[i] < samples[:, i]) & (
@@ -127,6 +150,7 @@ error_table = Table(
     names=["times", "freqs", "f_nu_ll", "f_nu_ul"],
 )
 
+error_table.write("error_table.txt", format="ascii")
 
 error_table = Table.read("error_table.txt", format="ascii")
 
@@ -140,6 +164,7 @@ for i in tqdm(range(len(uniq_freqs))):
 
     ssa_fnu = SSA_flux_density(t=t_range, nu=uniq_freqs[i] * 1e9, **params)
     ax.plot(t_range, ssa_fnu, linewidth=0.5, color=colors[i])
+
     ax.fill_between(
         error_times[sel_error_data],
         f_nu_ll[sel_error_data],

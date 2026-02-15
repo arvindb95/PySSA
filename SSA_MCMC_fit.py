@@ -32,7 +32,7 @@ fixed_params = {
     "s": 2.0,
     "scriptF_0": 1.0,  # as we have eps_e = eps_B
     "alpha_scriptF": 0.0,  # as we have eps_e = eps_B at all times
-    "to_interp": False, # Whether to use interpolation from saved grid to speed up calculations of F2 and F3 functions
+    "to_interp": True,  # Whether to use interpolation from saved grid to speed up calculations of F2 and F3 functions
 }
 
 # Variable parameters
@@ -128,8 +128,8 @@ def run_mcmc(
 ):
     t = times
     nu = freqs * 1e9  ### Make sure this is in Hz
-    F = fluxes  ### Make sure this is in mJy
-    F_err = fluxerrs  ### Make sure this is in mJy
+    F = fluxes  ### Make sure this is in uJy
+    F_err = fluxerrs  ### Make sure this is in uJy
 
     pos = get_starting_pos(guess_parameters, nwalkers, ndim=ndim)
 
@@ -188,9 +188,9 @@ method = "L-BFGS-B"
 nll = lambda *args: -lnlike(*args)
 better_guess_params = op.minimize(
     nll,
-    guess_paras,
+    guess_params,
     bounds=bounds,
-    args=(times, t_0, freqs * 1e9, fluxes, fluxerrs),
+    args=(times, freqs * 1e9, fluxes, fluxerrs),
     method=method,
     options={"disp": True},
 )
@@ -200,10 +200,10 @@ print(better_guess_params["x"])
 with Pool() as pool:
     sampler = run_mcmc(
         better_guess_params["x"],
-        niters=10,
+        niters=5000,
         nwalkers=10,
         ndim=4,
         pool=pool,
         backend_file="SN2003L.h5",
-        restart=False,
+        restart=True,
     )

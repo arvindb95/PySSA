@@ -233,7 +233,7 @@ def calc_f_nu(t, t_0, C_f, alpha_r, alpha_B, tau_nu, xi, p, nu, F2, F3):
 
 
 def SSA_flux_density(
-    t, t_0, nu, d, eta, B_0, r_0, alpha_r, p, nu_m_0, s, xi, scriptF_0, alpha_scriptF
+    t, nu, t_0, d, eta, B_0, r_0, alpha_r, p, nu_m_0, s, xi, scriptF_0, alpha_scriptF
 , to_interp):
     """
     Returns SSA flux density (in uJy) as a function of time
@@ -249,7 +249,6 @@ def SSA_flux_density(
 
     nu_m = calc_nu_m(t, 10 ** (log_nu_m_0), t_0, alpha_gamma, alpha_B)
     x = (2.0 / 3.0) * (nu / nu_m)
-    print(x)
     if to_interp==False:
         F2 = calc_F_2(x, calc_F, p)
         F3 = calc_F_3(x, calc_F, p)
