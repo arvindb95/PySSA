@@ -14,7 +14,7 @@ Python implementation of the Sychrotron Self Absorbed (SSA) model from
 </p>
 - Use `SSA_MCMC_fit.py` to perform fit of the SSA model. `MCMC_plotter.py` helps to plot the corner plot and the walks (see the package [ChainConsumer](https://samreay.github.io/ChainConsumer/)).
 <p align="center">
-  <img src="best_fit_corner_plot.jpg" width="70%"/> 
+  <img src="best_fit_corner_plot_model1_final.jpg" width="70%"/> 
 </p>
 <p align="center" >
   <img src="walks.jpg" width="70%"/> 
@@ -25,7 +25,7 @@ Python implementation of the Sychrotron Self Absorbed (SSA) model from
 - Use `plot_lc_best_fit.py` to plot the best fit returned by the SSA MCMC fitter. Also plot the error region for the best fit line.
 
 <p align="center">
-  <img src="Soderberg_2005_figure2_SSA_fit.jpg" width="70%"/> 
+  <img src="Soderberg_2005_figure2_SSA_fit_model1.jpg" width="70%"/> 
 </p>
 
 ### Calculations are now faster with a `to_interp` parameter in the `SSA_flux_density` function. The interpolated calculation is much faster $\mathcal{O}(10000)$ and accurate to about $\mathcal{O}(10^{-5})$. 

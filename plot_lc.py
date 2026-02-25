@@ -4,8 +4,6 @@ from mycolorpy import colorlist as mcp
 import numpy as np
 from PySSA import *
 
-import time
-
 plt.rcParams.update(
     {
         "text.usetex": True,
@@ -13,7 +11,7 @@ plt.rcParams.update(
     }
 )
 
-comp_data = Table.read("comprehensive_soderberg_data.csv", format="ascii.csv")
+comp_data = Table.read("./comprehensive_soderberg_data.csv", format="ascii.csv")
 
 times = comp_data["Epoch"].data
 freqs = comp_data["Freqs"].data
@@ -64,6 +62,26 @@ params_interp = params
 params_interp["to_interp"] = True
 
 print(params_interp)
+
+n_of_obs = len(times)
+n_of_fit_params = 3
+
+dof = n_of_obs - n_of_fit_params
+
+
+def calc_chi_sq(flux, flux_errs, model):
+    return np.sum(((flux - model) ** 2) / (flux_errs**2))
+
+
+model = SSA_flux_density(t=times, nu=freqs * 1e9, **params)
+
+chi_sq = calc_chi_sq(fluxes, fluxerrs, model)
+
+print("###############################")
+print("Degrees of freedom = ", dof)
+print("Chi_sq = ", chi_sq)
+print("Reduced chi_sq = ", chi_sq / dof)
+print("###############################")
 
 ## Main physical parameters ##
 

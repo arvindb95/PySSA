@@ -60,7 +60,7 @@ params = {
     "to_interp": True,  # Whether to use interpolation from saved grid to speed up calculations of F2 and F3 functions
 }
 
-best_fit_tab = Table.read("mcmc_best_fit_params.txt", format="ascii")
+best_fit_tab = Table.read("mcmc_best_fit_params_model1_final.txt", format="ascii")
 
 best_fit_params = best_fit_tab["param"].data
 best_fit_vals = best_fit_tab["best_fit"].data
@@ -77,7 +77,7 @@ for i in range(len(best_fit_params)):
 ## Calculate chi_sq
 
 n_of_obs = len(times)
-n_of_fit_params = 4
+n_of_fit_params = 3
 
 dof = n_of_obs - n_of_fit_params
 
@@ -95,7 +95,7 @@ print("Degrees of freedom = ", dof)
 print("Chi_sq = ", chi_sq)
 print("Reduced chi_sq = ", chi_sq / dof)
 print("###############################")
-
+"""
 # Calculate errors on F_nu
 filename = "SN2003L.h5"
 reader = emcee.backends.HDFBackend(filename)
@@ -105,9 +105,9 @@ burnin = int(1 * np.max(tau))
 samples = reader.get_chain(discard=burnin, flat=True)
 
 sel_best_fit_values = np.ones(len(samples)).astype("bool")
-
-labels = [r"$B_{{0}}$", r"$\rm{{log}}_{{10}}r_{{0}}$", r"$\alpha_{{r}}$", r"$\xi$"]
-
+"""
+# labels = [r"$B_{{0}}$", r"$\rm{{log}}_{{10}}r_{{0}}$", r"$\alpha_{{r}}$", r"$\xi$"]
+"""
 tab_labels = ["B_0", "log_r_0", "alpha_r", "xi"]
 
 
@@ -158,13 +158,13 @@ error_times = error_table["times"].data
 error_freqs = error_table["freqs"].data
 f_nu_ll = error_table["f_nu_ll"].data
 f_nu_ul = error_table["f_nu_ul"].data
-
+"""
 for i in tqdm(range(len(uniq_freqs))):
-    sel_error_data = np.where(error_freqs == uniq_freqs[i])
+    # sel_error_data = np.where(error_freqs == uniq_freqs[i])
 
     ssa_fnu = SSA_flux_density(t=t_range, nu=uniq_freqs[i] * 1e9, **params)
     ax.plot(t_range, ssa_fnu, linewidth=0.5, color=colors[i])
-
+    """
     ax.fill_between(
         error_times[sel_error_data],
         f_nu_ll[sel_error_data],
@@ -173,6 +173,7 @@ for i in tqdm(range(len(uniq_freqs))):
         alpha=0.3,
         edgecolor="none",
     )
+    """
 
 
 ax.legend(title="Frequency", ncol=2)
@@ -181,4 +182,4 @@ ax.set_ylabel(r"Flux density ($\mu$Jy)")
 
 ax.set_xscale("log")
 ax.set_yscale("log")
-plt.savefig("Soderberg_2005_figure2_SSA_fit.jpg", dpi=300)
+plt.savefig("Soderberg_2005_figure2_SSA_fit_model1.jpg", dpi=300)

@@ -29,25 +29,25 @@ fixed_params = {
     "eta": 10,  # shell radius to thickness factor
     "p": 3.2,
     "nu_m_0": 1e9,  # Hz
-    "s": 2.0,
     "scriptF_0": 1.0,  # as we have eps_e = eps_B
     "alpha_scriptF": 0.0,  # as we have eps_e = eps_B at all times
     "to_interp": True,  # Whether to use interpolation from saved grid to speed up calculations of F2 and F3 functions
+    "s": 2.0,
+    "xi": 0.5,
 }
 
 # Variable parameters
 
 var_params = {
-    "B_0": 4.5,  # G
-    "r_0": 4.3e15,  # cm
-    "alpha_r": 0.96,
-    "xi": 0.5,
+    "B_0": 3.0,  # G
+    "r_0": 5.0e15,  # cm
+    "alpha_r": 0.9,
 }
 
 var_params_names = list(var_params.keys())
 print(var_params_names)
-param_scale_log = [False, True, False, False]
-bounds = [(1.0e-50, np.inf), (1.0e-50, np.inf), (1.0e-50, 1.0), (0.0, 1.0)]
+param_scale_log = [False, True, False]
+bounds = [(1.0e-50, np.inf), (1.0e-50, np.inf), (1.0e-50, 1.0)]
 
 guess_params = np.array(list(var_params.values()))
 guess_params[param_scale_log] = np.log10(guess_params[param_scale_log])
@@ -60,7 +60,7 @@ c = (const.c.cgs).value  # cm/s
 
 ## ------------ Load data ------------##
 
-comp_data = Table.read("comprehensive_soderberg_data.csv", format="ascii.csv")
+comp_data = Table.read("./comprehensive_soderberg_data.csv", format="ascii.csv")
 
 times = comp_data["Epoch"].data
 freqs = comp_data["Freqs"].data
@@ -110,7 +110,7 @@ def lnprob(theta, t, nu, F_obs, F_err):
 
 def get_starting_pos(guess_parameters, nwalkers, ndim=7):
     pos = [
-        np.asarray(list(guess_params)) + 1e-4 * np.random.randn(ndim)
+        np.asarray(list(guess_params)) + 1e-2 * np.random.randn(ndim)
         for i in range(nwalkers)
     ]
 
@@ -200,10 +200,10 @@ print(better_guess_params["x"])
 with Pool() as pool:
     sampler = run_mcmc(
         better_guess_params["x"],
-        niters=5000,
-        nwalkers=10,
-        ndim=4,
+        niters=10000,
+        nwalkers=100,
+        ndim=3,
         pool=pool,
-        backend_file="SN2003L.h5",
-        restart=True,
+        backend_file="SN2003L_model1_final.h5",
+        restart=False,
     )

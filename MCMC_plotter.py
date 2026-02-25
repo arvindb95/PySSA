@@ -19,27 +19,35 @@ from tqdm import tqdm
 mpl.rcParams["font.size"] = 13
 mpl.rcParams["legend.fontsize"] = 10
 
-filename = "SN2003L.h5"
+filename = "./SN2003L_model1_final.h5"
 reader = emcee.backends.HDFBackend(filename)
 
 tau = reader.get_autocorr_time()
 print(tau)
-burnin = int(1 * np.max(tau))
+burnin = int(2 * np.max(tau))
+
 samples = reader.get_chain(discard=burnin, flat=True)
-print(samples[0])
+print(np.shape(samples))
+
+samples[:, 1] = 10 ** (samples[:, 1])
 
 # samples[:,1] = 10**samples[:,1]
 
-ndim = 4
+ndim = 3
 
-labels = [r"$B_{{0}}$", r"$\rm{{log}}_{{10}}r_{{0}}$", r"$\alpha_{{r}}$", r"$\xi$"]
+labels = [
+    r"$B_{{0}}$",
+    r"$r_{{0}}$",
+    r"$\alpha_{{r}}$",
+]
 
-tab_labels = ["B_0", "log_r_0", "alpha_r", "xi"]
+tab_labels = ["B_0", "r_0", "alpha_r"]
 
 df = pd.DataFrame(samples, columns=labels)
 
 c = ChainConsumer()
 c.add_chain(Chain(samples=df, name="data table"))
+
 
 best_fit_values = np.zeros(len(labels))
 ll_values = np.zeros(len(labels))
@@ -69,7 +77,9 @@ mcmc_best_fit_tab = Table(
 )
 
 
-mcmc_best_fit_tab.write("mcmc_best_fit_params.txt", format="ascii", overwrite=True)
+mcmc_best_fit_tab.write(
+    "mcmc_best_fit_params_model1_final.txt", format="ascii", overwrite=True
+)
 
 # Now plotting
 
@@ -85,10 +95,11 @@ c.set_plot_config(
 )
 
 
+
 c.add_truth(Truth(location=loc_best_fit))
 
 c.plotter.plot()
-plt.savefig("best_fit_corner_plot.jpg", dpi=300)
+plt.savefig("best_fit_corner_plot_model1_final.jpg", dpi=300)
 
 c.plotter.plot_walks(convolve=100, plot_weights=False)
-plt.savefig("walks.jpg", dpi=300)
+plt.savefig("walks_model1_final.jpg", dpi=300)

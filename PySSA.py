@@ -31,25 +31,22 @@ to_interp = False
 
 F2_file = open("Interpolation_files/F2_values.pkl", "rb")
 F2_dict = pickle.load(F2_file)
-F2_x_values = F2_dict['x']
-F2_p_values = F2_dict['p']
-F2_values = F2_dict['F2']
+F2_x_values = F2_dict["x"]
+F2_p_values = F2_dict["p"]
+F2_values = F2_dict["F2"]
 
 F2_grid = np.array(F2_values).reshape(len(F2_p_values), len(F2_x_values))
-
 
 
 # for function F3
 
 F3_file = open("Interpolation_files/F3_values.pkl", "rb")
 F3_dict = pickle.load(F3_file)
-F3_x_values = F3_dict['x']
-F3_p_values = F3_dict['p']
-F3_values = F3_dict['F3']
+F3_x_values = F3_dict["x"]
+F3_p_values = F3_dict["p"]
+F3_values = F3_dict["F3"]
 
 F3_grid = np.array(F3_values).reshape(len(F3_p_values), len(F3_x_values))
-
-
 
 
 def calc_F(x):
@@ -69,8 +66,7 @@ def calc_F(x):
             F_x[i] = x_i * integrate.quad(fy1, x_i, np.inf)[0]
         return F_x
 
-    
-    
+
 def calc_F_2(x, calc_F, p):
     """
     Returns values of function F2 (defined in eq. A7 of Soderberg et al. 2005)
@@ -85,18 +81,21 @@ def calc_F_2(x, calc_F, p):
     else:
         F_2_x = np.zeros(len(x))
         for i, x_i in enumerate(x):
-            if x_i < 20000:
-                F_2_x[i] = np.sqrt(3) * integrate.quad(fy2, 0, x_i)[0]
-            else:
-                F_2_x[i:] = np.sqrt(3) * integrate.quad(fy2, 0, 20000)[0]
+            F_2_x[i] = np.sqrt(3) * integrate.quad(fy2, 0, x_i)[0]
         return F_2_x
 
-def calc_F_2_interp(x,p):    
-    
-    interp_func_F2 = interpolate.RegularGridInterpolator((np.unique(F2_x_values), np.unique(F2_p_values)), F2_grid.T, bounds_error = False, method="linear", fill_value=None)
-    return interp_func_F2((x,p))
-        
-        
+
+def calc_F_2_interp(x, p):
+    interp_func_F2 = interpolate.RegularGridInterpolator(
+        (np.unique(F2_x_values), np.unique(F2_p_values)),
+        F2_grid.T,
+        bounds_error=False,
+        method="linear",
+        fill_value=None,
+    )
+    return interp_func_F2((x, p))
+
+
 def calc_F_3(x, calc_F, p):
     """
     Returns values of function F3 (defined in eq. A7 of Soderberg et al. 2005)
@@ -111,16 +110,20 @@ def calc_F_3(x, calc_F, p):
     else:
         F_3_x = np.zeros(len(x))
         for i, x_i in enumerate(x):
-            if x_i < 2000:
-                F_3_x[i] = np.sqrt(3) * integrate.quad(fy3, 0, x_i)[0]
-            else:
-                F_3_x[i:] = np.sqrt(3) * integrate.quad(fy3, 0, 2000)[0]
+            F_3_x[i] = np.sqrt(3) * integrate.quad(fy3, 0, x_i)[0]
         return F_3_x
 
-def calc_F_3_interp(x,p):  
 
-    interp_func_F3 = interpolate.RegularGridInterpolator((np.unique(F3_x_values), np.unique(F3_p_values)), F3_grid.T, bounds_error = False, method="linear", fill_value=None)
-    return interp_func_F3((x,p))
+def calc_F_3_interp(x, p):
+    interp_func_F3 = interpolate.RegularGridInterpolator(
+        (np.unique(F3_x_values), np.unique(F3_p_values)),
+        F3_grid.T,
+        bounds_error=False,
+        method="linear",
+        fill_value=None,
+    )
+    return interp_func_F3((x, p))
+
 
 # --------------------------------------------------------------
 
@@ -233,8 +236,22 @@ def calc_f_nu(t, t_0, C_f, alpha_r, alpha_B, tau_nu, xi, p, nu, F2, F3):
 
 
 def SSA_flux_density(
-    t, nu, t_0, d, eta, B_0, r_0, alpha_r, p, nu_m_0, s, xi, scriptF_0, alpha_scriptF
-, to_interp):
+    t,
+    nu,
+    t_0,
+    d,
+    eta,
+    B_0,
+    r_0,
+    alpha_r,
+    p,
+    nu_m_0,
+    s,
+    xi,
+    scriptF_0,
+    alpha_scriptF,
+    to_interp,
+):
     """
     Returns SSA flux density (in uJy) as a function of time
     """
@@ -242,19 +259,24 @@ def SSA_flux_density(
     log_nu_m_0 = np.log10(nu_m_0)
 
     alpha_gamma = calc_alpha_gamma(alpha_r)
+    #print("alpha_gamma = ", np.round(alpha_gamma, 2))
     alpha_B = calc_alpha_B(alpha_r, s)
+    #print("alpha_B = ", np.round(alpha_B, 2))
     gamma_m_0 = calc_gamma_m_0(B_0, 10 ** (log_nu_m_0))
+    #print("gamma_m_0 = ", gamma_m_0)
     C_tau = calc_C_tau(B_0, 10 ** (log_r_0), eta, gamma_m_0, p, scriptF_0)
+    #print("C_tau = ", np.format_float_scientific(C_tau, unique=False, precision=1))
     C_f = calc_C_f(B_0, 10 ** (log_r_0), d, p)
+    #print("C_f = ", np.format_float_scientific(C_f, unique=False, precision=1))
 
     nu_m = calc_nu_m(t, 10 ** (log_nu_m_0), t_0, alpha_gamma, alpha_B)
     x = (2.0 / 3.0) * (nu / nu_m)
-    if to_interp==False:
+    if to_interp == False:
         F2 = calc_F_2(x, calc_F, p)
         F3 = calc_F_3(x, calc_F, p)
     else:
         F2 = calc_F_2_interp(x, p)
-        F3 = calc_F_3_interp(x, p)        
+        F3 = calc_F_3_interp(x, p)
 
     tau_nu = calc_tau_nu(
         t, t_0, C_tau, alpha_r, alpha_gamma, alpha_B, alpha_scriptF, p, nu, F2
