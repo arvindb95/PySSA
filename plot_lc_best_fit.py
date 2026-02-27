@@ -6,6 +6,8 @@ from PySSA import *
 from tqdm import tqdm
 import emcee
 
+import time
+
 plt.rcParams.update(
     {
         "text.usetex": True,
@@ -60,7 +62,7 @@ params = {
     "to_interp": True,  # Whether to use interpolation from saved grid to speed up calculations of F2 and F3 functions
 }
 
-best_fit_tab = Table.read("mcmc_best_fit_params_model1_final.txt", format="ascii")
+best_fit_tab = Table.read("./mcmc_best_fit_params_model1_final.txt", format="ascii")
 
 best_fit_params = best_fit_tab["param"].data
 best_fit_vals = best_fit_tab["best_fit"].data
@@ -95,20 +97,25 @@ print("Degrees of freedom = ", dof)
 print("Chi_sq = ", chi_sq)
 print("Reduced chi_sq = ", chi_sq / dof)
 print("###############################")
-"""
+
+t0 = time.time()
 # Calculate errors on F_nu
-filename = "SN2003L.h5"
+filename = "./SN2003L_model1_final.h5"
 reader = emcee.backends.HDFBackend(filename)
 
 tau = reader.get_autocorr_time()
-burnin = int(1 * np.max(tau))
+burnin = int(2 * np.max(tau))
 samples = reader.get_chain(discard=burnin, flat=True)
 
+print(np.shape(samples))
+
+samples[:, 1] = 10 ** (samples[:, 1])
+
 sel_best_fit_values = np.ones(len(samples)).astype("bool")
-"""
-# labels = [r"$B_{{0}}$", r"$\rm{{log}}_{{10}}r_{{0}}$", r"$\alpha_{{r}}$", r"$\xi$"]
-"""
-tab_labels = ["B_0", "log_r_0", "alpha_r", "xi"]
+
+labels = [r"$B_{{0}}$", r"$r_{{0}}$", r"$\alpha_{{r}}$"]
+
+tab_labels = ["B_0", "r_0", "alpha_r"]
 
 
 for i in range(len(labels)):
@@ -116,7 +123,10 @@ for i in range(len(labels)):
         samples[:, i] < ul_values[i]
     )
 
-final_param_set = samples[sel_best_fit_values, :]
+print(np.unique(sel_best_fit_values))
+
+final_param_set = samples
+
 
 print("Calculating errors on F_nu")
 
@@ -125,56 +135,70 @@ f_nu_ul_list = []
 freq_list = []
 t_list = []
 
-for t_r in np.logspace(1, 3, 25):
-    print("===============for t = ", t_r)
-    for nu_i in uniq_freqs:
-        f_nu = []
-        for p in tqdm(range(len(final_param_set))):
-            params.update(
-                {
-                    "B_0": final_param_set[p][0],
-                    "r_0": 10 ** (final_param_set[p][1]),
-                    "alpha_r": final_param_set[p][2],
-                    "xi": final_param_set[p][3],
-                }
-            )
-            f_nu.append(SSA_flux_density(t=t_r, nu=nu_i * 1e9, **params))
-        f_nu_ll_list.append(min(f_nu))
-        f_nu_ul_list.append(max(f_nu))
-        t_list.append(t_r)
-        freq_list.append(nu_i)
+t_r = np.logspace(1, 3, 25)
 
+ssa_fnu_all = np.zeros((len(final_param_set), len(t_r), len(uniq_freqs)))
 
-error_table = Table(
-    [t_list, freq_list, f_nu_ll_list, f_nu_ul_list],
-    names=["times", "freqs", "f_nu_ll", "f_nu_ul"],
+for i, nu_i in enumerate(uniq_freqs):
+    for p in tqdm(range(len(final_param_set))):
+        params.update(
+            {
+                "B_0": final_param_set[p][0],
+                "r_0": final_param_set[p][1],
+                "alpha_r": final_param_set[p][2],
+            }
+        )
+        ssa_fnu_all[p, :, i] = SSA_flux_density(t=t_r, nu=nu_i * 1e9, **params)
+
+f_nu_ll_list = np.min(ssa_fnu_all, axis=0)
+f_nu_ul_list = np.max(ssa_fnu_all, axis=0)
+
+center_values = np.percentile(
+    ssa_fnu_all, [3e-5, 0.149999, 2.2999, 16, 50, 84, 97.7, 99.85, 99.9999699], axis=0
 )
+# q_values = np.diff(center_values, axis=0)
 
-error_table.write("error_table.txt", format="ascii")
+print(center_values[:, 1, 1])
 
-error_table = Table.read("error_table.txt", format="ascii")
-
-error_times = error_table["times"].data
-error_freqs = error_table["freqs"].data
-f_nu_ll = error_table["f_nu_ll"].data
-f_nu_ul = error_table["f_nu_ul"].data
-"""
 for i in tqdm(range(len(uniq_freqs))):
-    # sel_error_data = np.where(error_freqs == uniq_freqs[i])
-
     ssa_fnu = SSA_flux_density(t=t_range, nu=uniq_freqs[i] * 1e9, **params)
-    ax.plot(t_range, ssa_fnu, linewidth=0.5, color=colors[i])
-    """
+    ax.plot(t_range, ssa_fnu, linewidth=0.5, color=colors[i], zorder=10)
+    # plotting 5 sigma error on flux
     ax.fill_between(
-        error_times[sel_error_data],
-        f_nu_ll[sel_error_data],
-        f_nu_ul[sel_error_data],
+        t_r,
+        y1=center_values[0, :, i],
+        y2=center_values[8, :, i],
         color=colors[i],
+        zorder=-1,
         alpha=0.3,
-        edgecolor="none",
     )
     """
+    ax.fill_between(
+        t_r,
+        y1=center_values[1, :, i],
+        y2=center_values[7, :, i],
+        color="k",
+        zorder=-1,
+        label="3 sigma",
+    )
 
+    ax.fill_between(
+        t_r,
+        y1=center_values[2, :, i],
+        y2=center_values[6, :, i],
+        color="grey",
+        zorder=-1,
+        label="2 sigma",
+    )
+    ax.fill_between(
+        t_r,
+        y1=center_values[3, :, i],
+        y2=center_values[5, :, i],
+        color="lightgrey",
+        zorder=-1,
+        label="1 sigma",
+    )
+    """
 
 ax.legend(title="Frequency", ncol=2)
 ax.set_xlabel("Time since burst (days)")
@@ -182,4 +206,5 @@ ax.set_ylabel(r"Flux density ($\mu$Jy)")
 
 ax.set_xscale("log")
 ax.set_yscale("log")
-plt.savefig("Soderberg_2005_figure2_SSA_fit_model1.jpg", dpi=300)
+plt.savefig("Soderberg_2005_figure2_SSA_fit_model1_with_5sigma_err.jpg", dpi=300)
+plt.show()
