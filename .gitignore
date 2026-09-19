@@ -5,3 +5,4 @@ test
 *.txt
 100days_fit
 Later_times_fit
+!requirements.txt

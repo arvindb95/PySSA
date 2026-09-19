@@ -3,15 +3,12 @@
 import numpy as np
 import emcee
 import astropy.units as u
-import astropy.constants as const
 from astropy.table import Table
 from timeit import default_timer as timer
 from PySSA import *
 import scipy.optimize as op
-import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import matplotlib as mpl
-from chainconsumer import ChainConsumer
 
 params = {"font.family": "serif", "text.usetex": True}
 
@@ -23,6 +20,10 @@ mpl.rcParams.update(params)
 
 # Fixed params
 
+# Held fixed during the fit. These reproduce Model 1 of Soderberg et al. 2005:
+# a wind CSM (s=2) with constant eps_e/eps_B (scriptF_0=1, alpha_scriptF=0).
+# to_interp=True is essential here - the exact quad path is ~1e4x slower and
+# would make the MCMC intractable. Valid because p=3.2 is a grid node.
 fixed_params = {
     "d": ((92.0 * u.Mpc).to(u.cm)).value,  # cm ; distance to source
     "t_0": 10,  # reference time 10 days since explosion
@@ -38,6 +39,7 @@ fixed_params = {
 
 # Variable parameters
 
+# Sampled parameters, with the values below used as the initial guess.
 var_params = {
     "B_0": 3.0,  # G
     "r_0": 5.0e15,  # cm
@@ -46,17 +48,14 @@ var_params = {
 
 var_params_names = list(var_params.keys())
 print(var_params_names)
+# r_0 is sampled as log10(r_0) because it spans many orders of magnitude.
+# bounds and theta throughout are therefore in the TRANSFORMED space:
+# bounds[1] constrains log10(r_0), not r_0.
 param_scale_log = [False, True, False]
 bounds = [(1.0e-50, np.inf), (1.0e-50, np.inf), (1.0e-50, 1.0)]
 
 guess_params = np.array(list(var_params.values()))
 guess_params[param_scale_log] = np.log10(guess_params[param_scale_log])
-
-## Physical constants ##
-
-m_e = (const.m_e.cgs).value  # g
-e = (const.e.esu).value  # esu
-c = (const.c.cgs).value  # cm/s
 
 ## ------------ Load data ------------##
 
@@ -71,6 +70,7 @@ fluxerrs = comp_data["Fluxerr"].data
 ## ------------ Define functions for MCMC ------------ ##
 
 
+# Flat (improper) prior: 0 inside the bounds, -inf outside.
 def lnprior(theta):
     allow_param_set = True
 
@@ -84,6 +84,8 @@ def lnprior(theta):
         return -np.inf
 
 
+# Gaussian likelihood. theta arrives in the transformed space, so undo the
+# log10 scaling before handing parameters to the model.
 def lnlike(theta, t, nu, F_obs, F_err):
     new_var_param_dict = {}
 
@@ -108,9 +110,11 @@ def lnprob(theta, t, nu, F_obs, F_err):
     return lp + lnlike(theta, t, nu, F_obs, F_err)
 
 
-def get_starting_pos(guess_parameters, nwalkers, ndim=7):
+# Small Gaussian ball around guess_parameters. Starting at the L-BFGS-B optimum
+# rather than the raw initial guess roughly halves the autocorrelation time.
+def get_starting_pos(guess_parameters, nwalkers, ndim):
     pos = [
-        np.asarray(list(guess_params)) + 1e-2 * np.random.randn(ndim)
+        np.asarray(list(guess_parameters)) + 1e-2 * np.random.randn(ndim)
         for i in range(nwalkers)
     ]
 
@@ -121,9 +125,9 @@ def run_mcmc(
     guess_parameters,
     pool,
     backend_file,
-    niters=500,
-    nwalkers=200,
-    ndim=7,
+    niters,
+    nwalkers,
+    ndim,
     restart=False,
 ):
     t = times
@@ -133,6 +137,8 @@ def run_mcmc(
 
     pos = get_starting_pos(guess_parameters, nwalkers, ndim=ndim)
 
+    # HDF5 backend (needs h5py). restart=True resumes an existing chain in this
+    # file instead of resetting it; run_mcmc(None, ...) then continues from the end.
     backend = emcee.backends.HDFBackend(backend_file)
     if restart == False:
         backend.reset(nwalkers, ndim)
@@ -182,28 +188,33 @@ def run_mcmc(
     return sampler
 
 
-## ------------ Initial minimization ------------ ##
+# Guard is required, not cosmetic: with the 'spawn' start method (macOS and
+# Windows) each Pool worker re-imports this module. Without the guard every
+# worker would rerun the minimisation and open its own Pool, spawning endlessly.
+if __name__ == "__main__":
+    ## ------------ Initial minimization ------------ ##
 
-method = "L-BFGS-B"
-nll = lambda *args: -lnlike(*args)
-better_guess_params = op.minimize(
-    nll,
-    guess_params,
-    bounds=bounds,
-    args=(times, freqs * 1e9, fluxes, fluxerrs),
-    method=method,
-    options={"disp": True},
-)
-print("The minimized parameters using " + method)
-print(better_guess_params["x"])
-
-with Pool() as pool:
-    sampler = run_mcmc(
-        better_guess_params["x"],
-        niters=10000,
-        nwalkers=100,
-        ndim=3,
-        pool=pool,
-        backend_file="SN2003L_model1_final.h5",
-        restart=False,
+    # Cheap gradient-free-ish optimisation first, to give the walkers a good start.
+    method = "L-BFGS-B"
+    nll = lambda *args: -lnlike(*args)
+    better_guess_params = op.minimize(
+        nll,
+        guess_params,
+        bounds=bounds,
+        args=(times, freqs * 1e9, fluxes, fluxerrs),
+        method=method,
+        options={"disp": True},
     )
+    print("The minimized parameters using " + method)
+    print(better_guess_params["x"])
+
+    with Pool() as pool:
+        sampler = run_mcmc(
+            better_guess_params["x"],
+            niters=10000,
+            nwalkers=100,
+            ndim=3,
+            pool=pool,
+            backend_file="SN2003L_model1_final.h5",
+            restart=False,
+        )

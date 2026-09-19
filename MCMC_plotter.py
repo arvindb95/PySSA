@@ -2,26 +2,20 @@ import emcee
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from chainconsumer import (
-    Chain,
-    ChainConfig,
-    ChainConsumer,
-    PlotConfig,
-    Truth,
-    make_sample,
-    truth,
-)
+from chainconsumer import Chain, ChainConsumer, PlotConfig, Truth
 import pandas as pd
 from astropy.table import Table
-from tqdm import tqdm
 
 
 mpl.rcParams["font.size"] = 13
 mpl.rcParams["legend.fontsize"] = 10
 
+# Chain written by SSA_MCMC_fit.py. *.h5 is gitignored, so run the fit first.
 filename = "./SN2003L_model1_final.h5"
 reader = emcee.backends.HDFBackend(filename)
 
+# Raises AutocorrError if the chain is shorter than 50 x tau - that is emcee
+# telling you the run is too short to trust, not a bug in this script.
 tau = reader.get_autocorr_time()
 print(tau)
 burnin = int(2 * np.max(tau))
@@ -29,12 +23,15 @@ burnin = int(2 * np.max(tau))
 samples = reader.get_chain(discard=burnin, flat=True)
 print(np.shape(samples))
 
+# Column 1 is log10(r_0) as sampled; convert back to r_0 in cm.
 samples[:, 1] = 10 ** (samples[:, 1])
 
 # samples[:,1] = 10**samples[:,1]
 
 ndim = 3
 
+# These strings are used both as DataFrame column names and as LaTeX axis
+# labels, so they must match the keys used for Truth(location=...) below.
 labels = [
     r"$B_{{0}}$",
     r"$r_{{0}}$",
@@ -55,6 +52,8 @@ ul_values = np.zeros(len(labels))
 
 loc_best_fit = {}
 
+# .center is the point estimate, .lower/.upper the 1-sigma credible interval.
+# plot_lc_best_fit.py reads these three columns back out of the written table.
 for i in range(len(labels)):
     param_best_fit = c.analysis.get_summary()["data table"][labels[i]].center
     param_ll = c.analysis.get_summary()["data table"][labels[i]].lower
@@ -77,6 +76,7 @@ mcmc_best_fit_tab = Table(
 )
 
 
+# Consumed by plot_lc_best_fit.py.
 mcmc_best_fit_tab.write(
     "mcmc_best_fit_params_model1_final.txt", format="ascii", overwrite=True
 )

@@ -1,6 +1,5 @@
 import numpy as np
 from scipy import integrate, special
-from astropy.table import Table
 from tqdm import tqdm
 import pickle
 
@@ -22,6 +21,9 @@ def calc_F(x):
             F_x[i] = x_i * integrate.quad(fy1, x_i, np.inf)[0]
         return F_x
 
+# Integrand is F(y) * y^((p-3)/2), whose exponent is NEGATIVE for p < 3.
+# At y=0 that gives inf, and calc_F(0)=0, so the product is NaN. The x<=0
+# guard below returns the analytic value instead and keeps the grid finite.
 def calc_F_3(x, calc_F, p):
     """
     Returns values of function F3 (defined in eq. A7 of Soderberg et al. 2005)
@@ -32,7 +34,8 @@ def calc_F_3(x, calc_F, p):
         return calc_F(y) * (y ** ((p - 3.0) / 2.0))
 
     if isinstance(x, float):
-        return np.sqrt(3) * integrate.quad(fy3, 0, x)[0]
+        # F3(0) = 0 analytically; quad returns NaN here for p < 3
+        return 0.0 if x <= 0.0 else np.sqrt(3) * integrate.quad(fy3, 0, x)[0]
     else:
         F_3_x = np.zeros(len(x))
         for i, x_i in enumerate(x):
@@ -42,12 +45,14 @@ def calc_F_3(x, calc_F, p):
                 F_3_x[i:] = np.sqrt(3) * integrate.quad(fy3, 0, 2000)[0]
         return F_3_x
 
+# Grid consumed by PySSA.calc_F_3_interp; same layout and cost as F2.
 x1 = np.arange(0, 20, 1e-3)
 x2 = np.arange(20, 10000)
 x = np.append(x1, x2)
 
 print(x)
 
+# See gen_F2_values.py for the accuracy implications of this 0.1 spacing.
 p = np.arange(2, 3.5, 0.1)
 
 F3 = []

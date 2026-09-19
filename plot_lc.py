@@ -11,6 +11,9 @@ plt.rcParams.update(
     }
 )
 
+# SN 2003L radio photometry, transcribed from Table 1 of Soderberg et al. 2005.
+# 108 VLA points at 4.9 / 8.5 / 15.0 / 22.5 GHz; epochs in days, fluxes in uJy.
+# The single VLBA point in that table is deliberately excluded.
 comp_data = Table.read("./comprehensive_soderberg_data.csv", format="ascii.csv")
 
 times = comp_data["Epoch"].data
@@ -57,12 +60,17 @@ params = {
 }
 print(params)
 
-params_interp = params
+# dict(params) makes an independent copy. Assigning `params_interp = params`
+# would alias the same dict, so flipping to_interp below would also flip it in
+# `params` and both curves plotted further down would be the interpolated one.
+params_interp = dict(params)
 
 params_interp["to_interp"] = True
 
 print(params_interp)
 
+# 3 free parameters (C_f, C_tau, alpha_r in the paper; B_0, r_0, alpha_r here),
+# giving 105 dof, matching the value quoted in Soderberg et al. 2005.
 n_of_obs = len(times)
 n_of_fit_params = 3
 
@@ -86,9 +94,13 @@ print("###############################")
 ## Main physical parameters ##
 
 # as we have eps_e = eps_B at all times
+# Model light curves from 10 to 1000 days after explosion.
 t = np.logspace(1, 3, 100)
 
 for i in range(len(uniq_freqs)):
+    # Solid line: F2/F3 integrated from scratch with quad (slow, ~10 s per curve).
+    # Dashed line: same model via the interpolated grid (~1e4x faster).
+    # They should lie on top of each other - that agreement is the point of the plot.
     ssa_fnu = SSA_flux_density(t, uniq_freqs[i] * 1e9, **params)
 
     ax.plot(t, ssa_fnu, linewidth=1, color=colors[i])

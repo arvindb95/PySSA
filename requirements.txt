@@ -1,0 +1,23 @@
+# PySSA dependencies
+# Tested with Python 3.10 on the version set listed after each floor.
+
+numpy>=1.24            # tested 1.26.4
+scipy>=1.10            # tested 1.15.3  - integrate.quad, interpolate.RegularGridInterpolator
+astropy>=5.3           # tested 6.1.7   - constants, units, Table
+
+# MCMC fitting (SSA_MCMC_fit.py, MCMC_plotter.py, plot_lc_best_fit.py)
+emcee>=3.1             # tested 3.1.6
+h5py>=3.8              # tested 3.13.0  - required by emcee.backends.HDFBackend
+chainconsumer>=1.1     # tested 1.1.3   - v1 API (Chain, PlotConfig, Truth); v0.x will NOT work
+pandas>=2.0            # tested 2.2.3   - ChainConsumer takes a DataFrame
+
+# Plotting
+matplotlib>=3.7        # tested 3.10.1
+mycolorpy>=1.5         # tested 1.5.1   - colorlist.gen_color_normalized
+
+# Progress bars (Interpolation_files/gen_*.py, plot_lc_best_fit.py)
+tqdm>=4.65             # tested 4.67.1
+
+# NOTE: plot_lc.py, plot_lc_best_fit.py and MCMC_plotter.py set text.usetex=True.
+# That needs a system LaTeX installation plus dvipng (e.g. texlive-latex-extra,
+# dvipng, cm-super) - not installable via pip. Set usetex=False to skip it.

@@ -25,10 +25,15 @@ c = (const.c.cgs).value  # cm/s
 
 # Define functions F_2 and F_3
 
+# Module-level default only; SSA_flux_density() takes to_interp as an argument
+# and that argument is what actually selects exact vs interpolated F2/F3.
 to_interp = False
 
 # for function F2
 
+# Pre-tabulated F2/F3 grids (see Interpolation_files/gen_F*_values.py).
+# Grid covers x = 0 - 9999 and p = 2.0, 2.1, ... 3.4 (15 nodes, 0.1 spacing).
+# Values are stored flat, p-major: index = j*len(x) + i for (p_j, x_i).
 F2_file = open("Interpolation_files/F2_values.pkl", "rb")
 F2_dict = pickle.load(F2_file)
 F2_x_values = F2_dict["x"]
@@ -49,6 +54,9 @@ F3_values = F3_dict["F3"]
 F3_grid = np.array(F3_values).reshape(len(F3_p_values), len(F3_x_values))
 
 
+# F, F2 and F3 below are the synchrotron functions of Soderberg et al. 2005,
+# eqs. A7 and A12. The sqrt(3) that Rybicki & Lightman carry in P(nu,gamma) is
+# folded into F2/F3 here, matching the paper's convention (its eq. A6 omits it).
 def calc_F(x):
     """
     Returns values of function F (defined in eq. A7 of Soderberg et al. 2005)
@@ -85,6 +93,11 @@ def calc_F_2(x, calc_F, p):
         return F_2_x
 
 
+# Linear interpolation on the saved grid. ~1e4x faster than quad, and exact to
+# ~1e-9 when p lands on a grid node (any multiple of 0.1 in [2.0, 3.4]).
+# Between nodes the p-interpolation error rises to ~5e-3 relative.
+# bounds_error=False + fill_value=None means queries outside the grid are
+# EXTRAPOLATED silently (p=5 is ~20% wrong), so keep p within 2.0-3.4.
 def calc_F_2_interp(x, p):
     interp_func_F2 = interpolate.RegularGridInterpolator(
         (np.unique(F2_x_values), np.unique(F2_p_values)),
@@ -130,6 +143,8 @@ def calc_F_3_interp(x, p):
 # Define constants gamma_m_0, C_f, C_tau, alpha_gamma, alpha_B in terms of the physical variables/constants above
 
 
+# Constants below are all in CGS. nu_m is defined as nu_crit(gamma_m) with
+# nu_crit = gamma^2 eB/(2 pi m_e c), i.e. eq. A15 inverted for gamma_m_0.
 def calc_gamma_m_0(B_0, nu_m_0):
     """
     Calculate gamma_m_0 from eq. A15 of Soderberg et al. 2005
@@ -179,6 +194,7 @@ def calc_alpha_B(alpha_r, s):
 # Calculate the characteristic frequencies as a function of time
 
 
+# nu_m ~ gamma_m^2 B, hence the exponent 2*alpha_gamma + alpha_B.
 def calc_nu_m(t, nu_m_0, t_0, alpha_gamma, alpha_B):
     """
     Calculate nu_m at t from above calcuated constants (see eq. A10 of Soderberg et al. 2005)
@@ -216,6 +232,8 @@ def calc_tau_nu(t, t_0, C_tau, alpha_r, alpha_gamma, alpha_B, alpha_scrpitF, p, 
 # Finally calculate flux density
 
 
+# eq. A8 gives f_nu in erg/s/cm^2/Hz; the return statement converts to uJy.
+# xi (zeta in the paper) sets the sharpness of the optically thick/thin break.
 def calc_f_nu(t, t_0, C_f, alpha_r, alpha_B, tau_nu, xi, p, nu, F2, F3):
     """
     Calculate f_nu at t (see eq. A8 of Soderberg et al. 2005)
@@ -270,6 +288,7 @@ def SSA_flux_density(
     #print("C_f = ", np.format_float_scientific(C_f, unique=False, precision=1))
 
     nu_m = calc_nu_m(t, 10 ** (log_nu_m_0), t_0, alpha_gamma, alpha_B)
+    # x = (2/3)(nu/nu_m) is the paper's scaled frequency (below its eq. A12).
     x = (2.0 / 3.0) * (nu / nu_m)
     if to_interp == False:
         F2 = calc_F_2(x, calc_F, p)

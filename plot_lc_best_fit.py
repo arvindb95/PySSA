@@ -62,6 +62,9 @@ params = {
     "to_interp": True,  # Whether to use interpolation from saved grid to speed up calculations of F2 and F3 functions
 }
 
+# Best-fit parameters and their 1-sigma bounds, written by MCMC_plotter.py.
+# Note: *.txt is gitignored, so this file is not in the repo - run the MCMC
+# (SSA_MCMC_fit.py) and then MCMC_plotter.py before running this script.
 best_fit_tab = Table.read("./mcmc_best_fit_params_model1_final.txt", format="ascii")
 
 best_fit_params = best_fit_tab["param"].data
@@ -103,12 +106,16 @@ t0 = time.time()
 filename = "./SN2003L_model1_final.h5"
 reader = emcee.backends.HDFBackend(filename)
 
+# Discard 2 x the integrated autocorrelation time as burn-in. Check this is
+# actually long enough: walkers must have reached the posterior by then.
 tau = reader.get_autocorr_time()
 burnin = int(2 * np.max(tau))
 samples = reader.get_chain(discard=burnin, flat=True)
 
 print(np.shape(samples))
 
+# r_0 is sampled in log10 space (see param_scale_log in SSA_MCMC_fit.py),
+# so undo that here to get r_0 in cm.
 samples[:, 1] = 10 ** (samples[:, 1])
 
 sel_best_fit_values = np.ones(len(samples)).astype("bool")
@@ -125,6 +132,8 @@ for i in range(len(labels)):
 
 print(np.unique(sel_best_fit_values))
 
+# The whole posterior is propagated through the model below. sel_best_fit_values
+# above restricts to the 1-sigma box but is currently not applied here.
 final_param_set = samples
 
 
@@ -135,24 +144,33 @@ f_nu_ul_list = []
 freq_list = []
 t_list = []
 
+# Coarser time grid than t_range: the band needs one model evaluation per
+# posterior sample per frequency, so cost scales as n_samples x n_freqs.
+# At 100 walkers x 10000 iterations that is ~4e6 evaluations (hours).
 t_r = np.logspace(1, 3, 25)
 
 ssa_fnu_all = np.zeros((len(final_param_set), len(t_r), len(uniq_freqs)))
 
 for i, nu_i in enumerate(uniq_freqs):
     for p in tqdm(range(len(final_param_set))):
-        params.update(
-            {
-                "B_0": final_param_set[p][0],
-                "r_0": final_param_set[p][1],
-                "alpha_r": final_param_set[p][2],
-            }
+        # Build a fresh dict per sample. Mutating `params` in place here would leave it
+        # holding the last posterior sample, and the best-fit curve plotted further
+        # down would then be that sample rather than the actual best fit.
+        sample_params = dict(
+            params,
+            B_0=final_param_set[p][0],
+            r_0=final_param_set[p][1],
+            alpha_r=final_param_set[p][2],
         )
-        ssa_fnu_all[p, :, i] = SSA_flux_density(t=t_r, nu=nu_i * 1e9, **params)
+        ssa_fnu_all[p, :, i] = SSA_flux_density(t=t_r, nu=nu_i * 1e9, **sample_params)
 
 f_nu_ll_list = np.min(ssa_fnu_all, axis=0)
 f_nu_ul_list = np.max(ssa_fnu_all, axis=0)
 
+# Percentiles approximating -5, -3, -2, -1, 0, +1, +2, +3, +5 sigma.
+# Caveat: the outermost pair is a ~3e-7 quantile, far beyond what the chain's
+# effective sample size (n_samples / tau) can resolve, so the '5 sigma' band is
+# in practice just the min/max of the sampled curves.
 center_values = np.percentile(
     ssa_fnu_all, [3e-5, 0.149999, 2.2999, 16, 50, 84, 97.7, 99.85, 99.9999699], axis=0
 )
@@ -161,6 +179,7 @@ center_values = np.percentile(
 print(center_values[:, 1, 1])
 
 for i in tqdm(range(len(uniq_freqs))):
+    # `params` still holds the best fit read from the table above.
     ssa_fnu = SSA_flux_density(t=t_range, nu=uniq_freqs[i] * 1e9, **params)
     ax.plot(t_range, ssa_fnu, linewidth=0.5, color=colors[i], zorder=10)
     # plotting 5 sigma error on flux

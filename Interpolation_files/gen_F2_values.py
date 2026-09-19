@@ -1,6 +1,5 @@
 import numpy as np
 from scipy import integrate, special
-from astropy.table import Table
 from tqdm import tqdm
 import pickle
 
@@ -23,6 +22,8 @@ def calc_F(x):
         return F_x
 
 
+# Integrand is F(y) * y^((p-2)/2). The exponent is >= 0 over the whole p grid,
+# so y=0 is harmless here (unlike F3, which needs an explicit guard).
 def calc_F_2(x, calc_F, p):
     """
     Returns values of function F2 (defined in eq. A7 of Soderberg et al. 2005)
@@ -44,12 +45,17 @@ def calc_F_2(x, calc_F, p):
         return F_2_x
 
 
+# Grid consumed by PySSA.calc_F_2_interp: 29980 x-values (0-9999) x 15 p-values.
+# Stored flat, p-major. Regenerating costs several core-hours because the inner
+# calc_F is re-integrated inside every outer quad evaluation.
 x1 = np.arange(0, 20, 1e-3)
 x2 = np.arange(20, 10000)
 x = np.append(x1, x2)
 
 print(x)
 
+# p nodes at 0.1 spacing. Interpolation is essentially exact ON these nodes and
+# ~5e-3 relative between them, so widen this grid if you need arbitrary p.
 p = np.arange(2, 3.5, 0.1)
 
 F2 = []

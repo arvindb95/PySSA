@@ -22,6 +22,8 @@ def calc_F(x):
         return F_x
 
 
+# Fine sampling below x=20 where F(x) varies fastest (it peaks at x=0.29),
+# coarse above. Output is only used by the exploratory notebook, not by PySSA.
 x1 = np.arange(0, 20, 1e-6)
 x2 = np.arange(20, 700, 0.01)
 x = np.append(x1, x2)
