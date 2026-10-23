@@ -84,18 +84,33 @@ def lnprior(theta):
         return -np.inf
 
 
-# Gaussian likelihood. theta arrives in the transformed space, so undo the
-# log10 scaling before handing parameters to the model.
+# theta is in the transformed space, so undo the log10 scaling here. theta may
+# also be an (n, ndim) array of samples: each parameter is then an (n, 1, 1)
+# array, so one SSA_flux_density(t[:, None], nu[None, :], ...) call returns all
+# n light curves, shape (n, len(t), len(nu)).
+def theta_to_params(theta):
+    theta = np.asarray(theta)
+    out = {}
+    for i, name in enumerate(var_params_names):
+        x = 10 ** theta[..., i] if param_scale_log[i] else theta[..., i]
+        out[name] = x[:, None, None] if theta.ndim == 2 else x
+    return out
+
+
+# Error region of the model: percentiles q (default 1 sigma) of F_nu over a
+# random subset of n_draw posterior samples (theta space, e.g. from
+# reader.get_chain(flat=True)). t in days, nu in Hz; returns (len(q), len(t), len(nu)).
+def flux_band(samples, t, nu, q=(15.865, 84.135), n_draw=2000, seed=0):
+    samples = np.asarray(samples)
+    if len(samples) > n_draw:
+        samples = samples[np.random.default_rng(seed).choice(len(samples), n_draw, replace=False)]
+    f_nu = SSA_flux_density(np.asarray(t)[:, None], np.asarray(nu)[None, :], **theta_to_params(samples), **fixed_params)
+    return np.percentile(f_nu, q, axis=0)
+
+
+# Gaussian likelihood.
 def lnlike(theta, t, nu, F_obs, F_err):
-    new_var_param_dict = {}
-
-    for var_i in range(len(var_params_names)):
-        if param_scale_log[var_i]:
-            new_var_param_dict.update({var_params_names[var_i]: 10 ** (theta[var_i])})
-        else:
-            new_var_param_dict.update({var_params_names[var_i]: theta[var_i]})
-
-    f_nu = SSA_flux_density(t, nu, **new_var_param_dict, **fixed_params)
+    f_nu = SSA_flux_density(t, nu, **theta_to_params(theta), **fixed_params)
     inv_sigma2 = 1.0 / F_err**2.0
 
     return -0.5 * (np.sum((F_obs - f_nu) ** 2 * inv_sigma2 - np.log(inv_sigma2)))
