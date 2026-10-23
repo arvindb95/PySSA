@@ -3,6 +3,7 @@ from astropy.table import Table
 from mycolorpy import colorlist as mcp
 import numpy as np
 from PySSA import *
+from SSA_MCMC_fit import flux_band
 from tqdm import tqdm
 import emcee
 
@@ -114,65 +115,16 @@ samples = reader.get_chain(discard=burnin, flat=True)
 
 print(np.shape(samples))
 
-# r_0 is sampled in log10 space (see param_scale_log in SSA_MCMC_fit.py),
-# so undo that here to get r_0 in cm.
-samples[:, 1] = 10 ** (samples[:, 1])
-
-sel_best_fit_values = np.ones(len(samples)).astype("bool")
-
-labels = [r"$B_{{0}}$", r"$r_{{0}}$", r"$\alpha_{{r}}$"]
-
-tab_labels = ["B_0", "r_0", "alpha_r"]
-
-
-for i in range(len(labels)):
-    sel_best_fit_values &= (ll_values[i] < samples[:, i]) & (
-        samples[:, i] < ul_values[i]
-    )
-
-print(np.unique(sel_best_fit_values))
-
-# The whole posterior is propagated through the model below. sel_best_fit_values
-# above restricts to the 1-sigma box but is currently not applied here.
-final_param_set = samples
-
-
-print("Calculating errors on F_nu")
-
-f_nu_ll_list = []
-f_nu_ul_list = []
-freq_list = []
-t_list = []
-
-# Coarser time grid than t_range: the band needs one model evaluation per
-# posterior sample per frequency, so cost scales as n_samples x n_freqs.
-# At 100 walkers x 10000 iterations that is ~4e6 evaluations (hours).
+# Coarser time grid than t_range. flux_band (SSA_MCMC_fit.py) evaluates a
+# random subset of 2000 posterior samples in one vectorised call.
 t_r = np.logspace(1, 3, 25)
-
-ssa_fnu_all = np.zeros((len(final_param_set), len(t_r), len(uniq_freqs)))
-
-for i, nu_i in enumerate(uniq_freqs):
-    for p in tqdm(range(len(final_param_set))):
-        # Build a fresh dict per sample. Mutating `params` in place here would leave it
-        # holding the last posterior sample, and the best-fit curve plotted further
-        # down would then be that sample rather than the actual best fit.
-        sample_params = dict(
-            params,
-            B_0=final_param_set[p][0],
-            r_0=final_param_set[p][1],
-            alpha_r=final_param_set[p][2],
-        )
-        ssa_fnu_all[p, :, i] = SSA_flux_density(t=t_r, nu=nu_i * 1e9, **sample_params)
-
-f_nu_ll_list = np.min(ssa_fnu_all, axis=0)
-f_nu_ul_list = np.max(ssa_fnu_all, axis=0)
 
 # Percentiles approximating -5, -3, -2, -1, 0, +1, +2, +3, +5 sigma.
 # Caveat: the outermost pair is a ~3e-7 quantile, far beyond what the chain's
 # effective sample size (n_samples / tau) can resolve, so the '5 sigma' band is
 # in practice just the min/max of the sampled curves.
-center_values = np.percentile(
-    ssa_fnu_all, [3e-5, 0.149999, 2.2999, 16, 50, 84, 97.7, 99.85, 99.9999699], axis=0
+center_values = flux_band(
+    samples, t_r, uniq_freqs * 1e9, q=[3e-5, 0.149999, 2.2999, 16, 50, 84, 97.7, 99.85, 99.9999699]
 )
 # q_values = np.diff(center_values, axis=0)
 
